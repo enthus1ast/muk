@@ -9,6 +9,7 @@ import strutils
 import filesys
 import sequtils
 import json
+import parsecfg
 
 import keybinding, events
 
@@ -19,6 +20,7 @@ type
     inPlaylist: bool
     fs: Filesystem
     tb: TerminalBuffer
+    config: Config
 
     # Gui widgets
     filesystem: ChooseBox
@@ -33,8 +35,18 @@ type
     keybindingPlaylist: Keybinding
     keybindingFilesystem: Keybinding
 
+    musikDir1: string
+    musikDir2: string
+    musikDir3: string
+    musikDir4: string
+
 proc newMuk(): Muk =
   result = Muk()
+  result.config = loadConfig(getAppDir() / "config.ini")
+  result.musikDir1 = result.config.getSectionValue("musicDirs", "musicDir1")
+  result.musikDir2 = result.config.getSectionValue("musicDirs", "musicDir2")
+  result.musikDir3 = result.config.getSectionValue("musicDirs", "musicDir3")
+  result.musikDir4 = result.config.getSectionValue("musicDirs", "musicDir4")
   result.ctx = mpv.create()
   if result.ctx.isNil:
     echo "failed creating mpv context"
@@ -143,8 +155,6 @@ proc prevFromPlaylist(muk: Muk) =
 
 proc clearPlaylist(muk: Muk) =
   tryIgnore muk.ctx.command("playlist-clear")
-# var orgBg = getBackgroundColor()
-# var odgFg = ter
 
 # proc getInterpret(ctx: ptr handle): string =
 #   tryIgnore ctx.command()
@@ -154,8 +164,6 @@ proc clearPlaylist(muk: Muk) =
 
 # proc getSong(ctx: ptr handle): string =
 #   tryIgnore ctx.command()
-
-
 
 type
   PlaylistSong = object
@@ -202,7 +210,10 @@ proc fillFilesystem(filesystem: var ChooseBox, elems: seq[string]) =
     filesystem.elements.add elem
 # proc addSelectedItemToPlaylist
 
-
+proc filesystemOpenDir(muk: Muk, dir: string) =
+  ## Points the filesystem to the given `dir`
+  muk.fs.currentPath = dir
+  muk.filesystem.fillFilesystem(muk.fs.ls)
 
 proc main(): int =
   var muk = newMuk()
@@ -210,11 +221,12 @@ proc main(): int =
   muk.addToPlaylist """C:\Users\david\ttt.mp4"""
   muk.addToPlaylist """C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3"""
   result = 1
-  var currentPath = """C:\Users\david\Music\2016 - Nonagon Infinity\"""
+  # var currentPath = """C:\Users\david\Music\2016 - Nonagon Infinity\"""
+
   # var currentPath = """D:\audio_books\Der Herr der Ringe (Hörbuch)\Der Herr der Ringe - Band 1 - Die Gefährten\"""
   # var currentPath = """D:/backup/IBC_new_2020_07_29/public/files/2019-08/"""
-  muk.fs.currentPath = currentPath
-  muk.filesystem.fillFilesystem(muk.fs.ls)
+  # muk.fs.currentPath = currentPath
+  muk.filesystemOpenDir(getCurrentDir().absolutePath())
 
   while true:
     let event = muk.ctx.wait_event(0)
@@ -267,6 +279,15 @@ proc main(): int =
     of MukDownFastFilesystem:
       muk.filesystem.nextChoosenidx(10)
 
+    of MukToMusicDir1:
+      muk.filesystemOpenDir(muk.musikDir1)
+    of MukToMusicDir2:
+      muk.filesystemOpenDir(muk.musikDir2)
+    of MukToMusicDir3:
+      muk.filesystemOpenDir(muk.musikDir3)
+    of MukToMusicDir4:
+      muk.filesystemOpenDir(muk.musikDir4)
+
     of MukShuffle:
       muk.ctx.command("playlist-shuffle")
     of MukUnShuffle:
@@ -276,7 +297,7 @@ proc main(): int =
     of MukDirUp:
         muk.fs.up()
         muk.filesystem.choosenidx = 0
-        muk.filesystem.fillFilesystem(muk.fs.ls())
+        muk.filesystemOpenDir(muk.fs.currentPath)
     of MukAddStuff:
       muk.addToPlaylist(muk.fs.currentPath / muk.filesystem.element())
       muk.filesystem.nextChoosenidx()
@@ -337,7 +358,7 @@ proc main(): int =
           muk.addToPlaylistAndPlay(muk.fs.currentPath / muk.filesystem.element())
         of ActionKind.Folder:
           muk.filesystem.choosenidx = 0
-          muk.filesystem.fillFilesystem(act.folderContent)
+          muk.filesystemOpenDir(act.folderPath)
         else:
           discard
 

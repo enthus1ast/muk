@@ -31,3 +31,8 @@ type
     MukVolumeDown
     MukMuteToggle
     MukVideoToggle
+
+    MukToMusicDir1
+    MukToMusicDir2
+    MukToMusicDir3
+    MukToMusicDir4

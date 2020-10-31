@@ -52,6 +52,7 @@ proc action*(fs: Filesystem, path: string): Action =
   if path.lastPathPart() == "..":
     result = Action(kind: ActionKind.Folder)
     fs.up()
+    result.folderPath = fs.currentPath
     result.folderContent = fs.ls()
   elif dirExists(actionPath):
     result = Action(kind: ActionKind.Folder)

@@ -36,6 +36,9 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.V] = MukVideoToggle
 
+  result[Key.Home] = MukToMusicDir1
+
+
 proc defaultKeybindingPlaylist*(): Keybinding =
   result = defaultKeybindingGlobal()
   result[Key.J] = MukDownPlaylist
