@@ -13,7 +13,7 @@ type
     of ActionKind.None:
       why*: string
 
-  Filesystem = ref object
+  Filesystem* = ref object
     currentPath*: string
     supportedExt: seq[string]
 
