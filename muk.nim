@@ -67,10 +67,10 @@ proc newMuk(): Muk =
   result.infSongPath = newInfoBox("", 0, terminalHeight() - 2, terminalWidth(), 1)
   result.progSongProgress = newProgressBar("", 2, terminalHeight() - 1, terminalWidth() - 2, 0.0, 100.0, bgTodo = bgBlack)
   result.progSongProgress.color = fgWhite
-  result.progSongProgress.colorText = fgRed
+  result.progSongProgress.colorText = fgYellow
   result.btnPlayPause = newButton(">", 0, terminalHeight() - 1, 2, 1, false)
 
-  # asyncCheck foo()
+
   # setControlCHook(exitProc)
   illwillInit(fullScreen = true, mouse = true)
   hideCursor()
@@ -80,10 +80,53 @@ proc newMuk(): Muk =
   result.keybindingPlaylist = defaultKeybindingPlaylist()
   result.keybindingFilesystem = defaultKeybindingFilesystem()
 
-proc foo() {.async.} =
+import sugar
+proc layout(muk: Muk) =
+  muk.filesystem.x = 1
+  muk.filesystem.y = 1
+  muk.filesystem.w = (terminalWidth() div 2) - 2
+  muk.filesystem.h = terminalHeight() - 5
+
+  muk.playlist.x = terminalWidth() div 2
+  muk.playlist.y = 1
+  muk.playlist.w = terminalWidth() div 2
+  muk.playlist.h = terminalHeight() - 5
+
+  muk.infLog.x = terminalWidth() div 2
+  muk.infLog.y = 1
+  muk.infLog.w = terminalWidth() div 3
+  muk.infLog.h = 10
+
+  muk.infSongPath.x = 0
+  muk.infSongPath.y = terminalHeight() - 2
+  muk.infSongPath.w = terminalWidth()
+  muk.infSongPath.h = 1
+
+  muk.progSongProgress. x = 2
+  muk.progSongProgress. y = terminalHeight() - 1
+  muk.progSongProgress. l = terminalWidth() - 2
+
+  # result.btnPlayPause = newButton(">",
+  muk.btnPlayPause.x = 0
+  muk.btnPlayPause.y = terminalHeight() - 1
+  muk.btnPlayPause.w = 2
+  muk.btnPlayPause.h = 1
+
+proc foo(muk: Muk) {.async.} =
   while true:
-    await sleepAsync(1000)
+    await sleepAsync(5000)
+    muk.tb.clear(" ")
+    muk.tb.display()
+    muk.layout()
     # echo "foo"
+
+proc banner(muk: Muk) =
+  muk.tb.write 1, 1, "                  __    ";
+  muk.tb.write 1, 2, ".--------..--.--.|  |--.";
+  muk.tb.write 1, 3, "|        ||  |  ||    < ";
+  muk.tb.write 1, 4, "|__|__|__||_____||__|__|";
+  muk.tb.write 1, 5, "                        ";
+  muk.tb.write 1, 5, "  prototype             ";
 
 proc exitProc() {.noconv.} =
   illwillDeinit()
@@ -196,12 +239,31 @@ proc fillPlaylistWidget(chooseBox: var ChooseBox, playlistSongs: seq[PlaylistSon
       chooseBox.highlightIdx = idx #song.id - 1
   # chooseBox.clear()
 
-proc infoCurrentSongDuration(muk: Muk): string =
+
+# proc infoCurrentSongDurationRaw(muk: Muk): tuple[pos: float, ] =
+import times
+
+proc formatDuration(dur: Duration): string =
+  let dp = dur.toParts()
+  result &= ($dp[Hours]).align(2, '0') & ":"
+  result &= ($dp[Minutes]).align(2, '0') & ":"
+  result &= ($dp[Seconds]).align(2, '0') & ":"
+  result &= ($dp[Milliseconds]).align(3, '0') & ":"
+
+
+proc infoCurrentSongDurationSeconds(muk: Muk): string =
   result = ""
   tryIgnore:
-    result &= muk.ctx.get_property("time-pos")
+    let curPos = initDuration(milliseconds = (parseFloat(muk.ctx.get_property("time-pos")) * 1000.00).int )
+    let duration = initDuration(milliseconds = (parseFloat(muk.ctx.get_property("duration")) * 1000.00).int )
+    result &= $curPos.formatDuration
     result &= "/"
-    result &= muk.ctx.get_property("duration")
+    result &= $duration.formatDuration
+  # tryIgnore:
+  #   result &= muk.ctx.get_property("time-pos")
+  #   result &= "/"
+  #   result &= muk.ctx.get_property("duration")
+
 
 proc fillFilesystem(filesystem: var ChooseBox, elems: seq[string]) =
   # TODO test if this is neccasary
@@ -224,6 +286,10 @@ proc quitGui(muk: Muk) =
 
 proc main(): int =
   var muk = newMuk()
+  muk.banner()
+  muk.tb.display()
+  sleep(1500)
+  # asyncCheck foo(muk)
   ## Testing
   muk.addToPlaylist """C:\Users\david\ttt.mp4"""
   muk.addToPlaylist """C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3"""
@@ -234,8 +300,18 @@ proc main(): int =
   # var currentPath = """D:/backup/IBC_new_2020_07_29/public/files/2019-08/"""
   # muk.fs.currentPath = currentPath
   muk.filesystemOpenDir(getCurrentDir().absolutePath())
+  muk.layout()
+  var oldDimenions = terminalSize()
 
   while true:
+    if oldDimenions != terminalSize():
+      # for idx in 0 .. 3:
+      muk.tb = newTerminalBuffer(terminalSize().w, terminalSize().h)
+      muk.tb.clear(" ")
+      muk.tb.display()
+      muk.layout()
+      sleep(50)
+      oldDimenions = terminalSize()
     let event = muk.ctx.wait_event(0)
     var key = getKey()
     var mev: MukEvent
@@ -398,7 +474,7 @@ proc main(): int =
     muk.infSongPath.text = muk.getSongTitle() & " | " & muk.getSongPath()
 
     muk.progSongProgress.value = muk.getProgressInPercent()
-    muk.progSongProgress.text = muk.infoCurrentSongDuration()  #$ctx.getProgressInPercent()
+    muk.progSongProgress.text = muk.infoCurrentSongDurationSeconds()  #$ctx.getProgressInPercent()
 
     if muk.getPause():
       muk.btnPlayPause.text = "||"
@@ -418,15 +494,18 @@ proc main(): int =
 
     muk.playlist.fillPlaylistWidget(muk.getPlaylist()) # TODO not every tick...
 
-    muk.tb.render(muk.filesystem)
-    muk.tb.render(muk.playlist)
-    # muk.tb.render(muk.infLog)
-    muk.tb.render(muk.infSongPath)
-    muk.tb.render(muk.progSongProgress)
-    muk.tb.render(muk.btnPlayPause)
-
-    muk.tb.display()
-    sleep(25)
+    try:
+      muk.tb.render(muk.filesystem)
+      muk.tb.render(muk.playlist)
+      # muk.tb.render(muk.infLog)
+      muk.tb.render(muk.infSongPath)
+      muk.tb.render(muk.progSongProgress)
+      muk.tb.render(muk.btnPlayPause)
+      muk.tb.display()
+    except:
+      echo "COULD NOT RENDER"
+      echo getCurrentExceptionMsg()
+    sleep(35)
     # GC_fullCollect()
 
   return 0
