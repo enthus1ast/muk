@@ -36,3 +36,6 @@ type
     MukToMusicDir2
     MukToMusicDir3
     MukToMusicDir4
+
+    MukQuitGui
+    MukQuitAll

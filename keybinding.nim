@@ -38,6 +38,10 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.Home] = MukToMusicDir1
 
+  result[Key.Q] = MukQuitGui
+  result[Key.ShiftQ] = MukQuitAll
+
+
 
 proc defaultKeybindingPlaylist*(): Keybinding =
   result = defaultKeybindingGlobal()

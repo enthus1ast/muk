@@ -215,6 +215,13 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
   muk.fs.currentPath = dir
   muk.filesystem.fillFilesystem(muk.fs.ls)
 
+proc quitGui(muk: Muk) =
+  muk.tb.resetAttributes()
+  illwillDeinit()
+  showCursor()
+  echo "muk, made with ♥, mpv and Nim. Star us on github :), http://github.com/enthus1ast/muk/"
+  quit(0)
+
 proc main(): int =
   var muk = newMuk()
   ## Testing
@@ -238,6 +245,8 @@ proc main(): int =
       mev = muk.keybindingFilesystem.toMukEvent(key)
 
     case mev
+    of MukQuitAll, MukQuitGui:
+      muk.quitGui()
     of MukPauseToggle:
       muk.togglePause()
     of MukSeekForward:
@@ -393,8 +402,10 @@ proc main(): int =
 
     if muk.getPause():
       muk.btnPlayPause.text = "||"
+      muk.btnPlayPause.color = fgYellow
     else:
       muk.btnPlayPause.text = ">>" # $($ctx.getPause())[0]
+      muk.btnPlayPause.color = fgGreen
 
     muk.filesystem.title = muk.fs.currentPath
     muk.playlist.title = "Unnamed playlist (todo)"
