@@ -9,6 +9,11 @@ import strutils
 import filesystem as filesystemModule
 # import playlist as pl
 
+
+# type
+#   Muk = ref object
+#     ctx: handle ## the libmpv context
+
 proc foo() {.async.} =
   while true:
     await sleepAsync(1000)
@@ -87,6 +92,17 @@ proc clearPlaylist(ctx: ptr handle) =
 # var orgBg = getBackgroundColor()
 # var odgFg = ter
 
+# proc getInterpret(ctx: ptr handle): string =
+#   tryIgnore ctx.command()
+
+# proc getAlbum(ctx: ptr handle): string =
+#   tryIgnore ctx.command()
+
+# proc getSong(ctx: ptr handle): string =
+#   tryIgnore ctx.command()
+
+
+
 import json
 type
   PlaylistSong = object
@@ -119,7 +135,7 @@ var inPlaylist = false
 
 # Widgets
 
-var filesystem = newChooseBox(@[], 1, 1, terminalWidth() div 2, terminalHeight() - 5, color = fgGreen )
+var filesystem = newChooseBox(@[], 1, 1, (terminalWidth() div 2) - 2, terminalHeight() - 5, color = fgGreen )
 var playlist = newChooseBox(@[],  terminalWidth() div 2, 1, terminalWidth() div 2, terminalHeight() - 5 , color = fgGreen)
 
 var infLog = newInfoBox("logbox", terminalWidth() div 2, 1, terminalWidth() div 3, 10)
@@ -140,6 +156,7 @@ proc fillPlaylistWidget(chooseBox: var ChooseBox, playlistSongs: seq[PlaylistSon
     chooseBox.elements.add song.filename
     if song.current:
       chooseBox.highlightIdx = idx #song.id - 1
+  # chooseBox.clear()
 
 proc infoCurrentSongDuration(ctx: ptr handle): string =
   result = ""
@@ -277,26 +294,41 @@ proc main(): int =
     if inPlaylist:
       if key == Key.J or key == Key.Down:
         playlist.nextChoosenidx()
-      if key == Key.K or key == Key.Up:
+      elif key == Key.K or key == Key.Up:
         playlist.prevChoosenidx()
-      if key == Key.S:
+
+      elif key == Key.PageDown:
+        playlist.nextChoosenidx(10)
+      elif key == Key.PageDown:
+        playlist.prevChoosenidx(10)
+
+
+      elif key == Key.S:
         ctx.command("playlist-shuffle")
-      if key == Key.ShiftS:
+      elif key == Key.ShiftS:
         ctx.command("playlist-unshuffle")
-      if key == Key.D:
+      elif key == Key.D:
         tryIgnore ctx.command("playlist-remove", $playlist.choosenIdx)
+
     else:
       if key == Key.Colon:
         fs.up()
         filesystem.choosenidx = 0
         filesystem.fillFilesystem(fs.ls())
-      if key == Key.J or key == Key.Down:
+
+      elif key == Key.J or key == Key.Down:
         filesystem.nextChoosenidx()
-      if key == Key.K or key == Key.Up:
+      elif key == Key.K or key == Key.Up:
         filesystem.prevChoosenidx()
-      if key == Key.A:
+      elif key == Key.PageDown:
+        filesystem.nextChoosenidx(10)
+      elif key == Key.PageDown:
+        filesystem.prevChoosenidx(10)
+
+      elif key == Key.A:
         # filesystem.choosenidx -= 1
-        ctx.addToPlaylist filesystem.element()
+        ctx.addToPlaylist(fs.currentPath / filesystem.element())
+        # ctx.addToPlaylist filesystem.element()
         filesystem.nextChoosenidx()
 
 
@@ -355,7 +387,7 @@ proc main(): int =
         infSongPath.text = fs.currentPath & "|" & $act #fs # filesystem.element()
         case act.kind
         of ActionKind.File:
-          ctx.addToPlaylistAndPlay(filesystem.element())
+          ctx.addToPlaylistAndPlay(fs.currentPath / filesystem.element())
         of ActionKind.Folder:
           filesystem.choosenidx = 0
           filesystem.fillFilesystem(act.folderContent)
@@ -396,6 +428,8 @@ proc main(): int =
     else:
       btnPlayPause.text = ">>" # $($ctx.getPause())[0]
 
+    filesystem.title = fs.currentPath
+    playlist.title = "Unnamed playlist (todo)"
 
     filesystem.highlight = not inPlaylist
     filesystem.chooseEnabled = not inPlaylist
