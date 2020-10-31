@@ -10,6 +10,7 @@ import filesys
 import sequtils
 import json
 
+import keybinding, events
 
 
 type
@@ -26,6 +27,11 @@ type
     infSongPath: InfoBox
     progSongProgress: ProgressBar
     btnPlayPause: Button
+
+    # Keybinding
+    # TODO maybe do two/three keebindings for Filesystem/Playlist/help etc..
+    keybindingPlaylist: Keybinding
+    keybindingFilesystem: Keybinding
 
 proc newMuk(): Muk =
   result = Muk()
@@ -58,6 +64,9 @@ proc newMuk(): Muk =
   hideCursor()
 
   result.tb = newTerminalBuffer(terminalWidth(), terminalHeight())
+
+  result.keybindingPlaylist = defaultKeybindingPlaylist()
+  result.keybindingFilesystem = defaultKeybindingFilesystem()
 
 proc foo() {.async.} =
   while true:
@@ -206,166 +215,81 @@ proc main(): int =
   # var currentPath = """D:/backup/IBC_new_2020_07_29/public/files/2019-08/"""
   muk.fs.currentPath = currentPath
   muk.filesystem.fillFilesystem(muk.fs.ls)
-  # filesystem.add ".."
-  # for file in walkFiles(currentPath / """*""" ):
-  #   # echo file
-  #   filesystem.add file
-
-  # if paramCount() != 1:
-  #   echo "pass a single media file as argument"
-  #   return
-
-  # let ctx = mpv.create()
-  # if ctx.isNil:
-  #   echo "failed creating mpv context"
-  #   return
-  # defer: mpv.terminate_destroy(ctx)
-
-  # Enable default key bindings, so the user can actually interact with
-  # the player (and e.g. close the window).
-  # ctx.set_option("terminal", "yes")
-  # ctx.set_option("input-default-bindings", "yes")
-  # ctx.set_option("input-vo-keyboard", "yes")
-  # ctx.set_option("osc", true)
-
-  # ctx.set_option("terminal", "no")
-  # ctx.set_option("video", "no")
-  # ctx.set_option("input-default-bindings", "yes")
-  # ctx.set_option("input-vo-keyboard", "no")
-  # ctx.set_option("osc", true)
-  # ctx.set_option("osc", true)
-
-  #ctx.set_option("really-quiet", "yes")
-
-  # Done setting up options.
-  # check_error ctx.initialize()
-
-  ## Testing
-  # ctx.addToPlaylist """C:\Users\david\ttt.mp4"""
-  # ctx.addToPlaylist """C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3"""
-
-  # echo ctx.getPlaylist()
-  # if true:
-  #   quit()
-
-  # Play this file.
-  # ctx.command("loadfile", paramStr(1))
-
-  # asyncCheck foo()
-
-  # setControlCHook(exitProc)
-  # illwillInit(fullScreen = true, mouse = true)
-  # hideCursor()
-
-  # var tb = newTerminalBuffer(terminalWidth(), terminalHeight())
-
-
-  # tb.doColorSchema()
-  # while true:
-  #   var key = getKey()
-  #   if key == Key.Mouse:
-  #     echo getMouse()
-  #   tb.display()
-  #   sleep(10)
 
   while true:
-
-    # var title: string
-    # tb.write(0, 0, $ctx.getProgressInPercent())
-    # tb.write(0, 1, $ctx.getSongTitle())
-    # tb.write(0, 2, $ctx.getSongPath())
-
     let event = muk.ctx.wait_event(0)
-    # muk.ctx.command()
     var key = getKey()
-    if key == Key.P:
+    var mev: MukEvent
+    if muk.inPlaylist:
+      mev = muk.keybindingPlaylist.toMukEvent(key)
+    else:
+      mev = muk.keybindingFilesystem.toMukEvent(key)
+
+    case mev
+    of MukPauseToggle:
       muk.togglePause()
-
-    ## Seeking
-    # Slow
-    if key == Key.Right or key == Key.L:
+    of MukSeekForward:
       muk.seekRelative(3)
-    if key == Key.Left or key == Key.H:
+    of MukSeekBackward:
       muk.seekRelative(-3)
-
-    # Fast
-    if key == Key.ShiftL:
+    of MukSeekForwardFast:
       muk.seekRelative(15)
-    if key == Key.ShiftH:
+    of MukSeekBackwardFast:
       muk.seekRelative(-15)
-
-    ## Windows
-    if key == Key.Tab:
+    of MukSwitchPane:
       muk.inPlaylist = not muk.inPlaylist
       muk.log($(muk.inPlaylist))
-
-    if key == Key.I:
-      # muk.command("query", "${playlist}")
-      # log(muk.get_property("playlist"))
-      # log($muk.getPlaylist())
+    of MukDebugInfo:
       muk.playlist.fillPlaylistWidget(muk.getPlaylist())
-
-    ## Playlist
-    if key == Key.ShiftK:
+    of MukPrevFromPlaylist:
       muk.prevFromPlaylist()
-    if key == Key.ShiftJ:
+    of MukNextFromPlaylist:
       muk.nextFromPlaylist()
-    if key == Key.C:
+    of MukClearPlaylist:
       # muk.clearPlaylist()
       muk.ctx.command("stop")
 
-    if muk.inPlaylist:
-      if key == Key.J or key == Key.Down:
-        muk.playlist.nextChoosenidx()
-      elif key == Key.K or key == Key.Up:
-        muk.playlist.prevChoosenidx()
+    of MukDownPlaylist:
+      muk.playlist.nextChoosenidx()
+    of MukUpPlaylist:
+      muk.playlist.prevChoosenidx()
+    of MukUpFastPlaylist:
+      muk.playlist.prevChoosenidx(10)
+    of MukDownFastPlaylist:
+      muk.playlist.nextChoosenidx(10)
 
-      elif key == Key.PageDown:
-        muk.playlist.nextChoosenidx(10)
-      elif key == Key.PageDown:
-        muk.playlist.prevChoosenidx(10)
+    of MukDownFilesystem:
+      muk.filesystem.nextChoosenidx()
+    of MukUpFilesystem:
+      muk.filesystem.prevChoosenidx()
+    of MukUpFastFilesystem:
+      muk.filesystem.prevChoosenidx(10)
+    of MukDownFastFilesystem:
+      muk.filesystem.nextChoosenidx(10)
 
-
-      elif key == Key.S:
-        muk.ctx.command("playlist-shuffle")
-      elif key == Key.ShiftS:
-        muk.ctx.command("playlist-unshuffle")
-      elif key == Key.D:
-        tryIgnore muk.ctx.command("playlist-remove", $muk.playlist.choosenIdx)
-
-    else:
-      if key == Key.Colon:
+    of MukShuffle:
+      muk.ctx.command("playlist-shuffle")
+    of MukUnShuffle:
+      muk.ctx.command("playlist-unshuffle")
+    of MukRemoveSong:
+      tryIgnore muk.ctx.command("playlist-remove", $muk.playlist.choosenIdx)
+    of MukDirUp:
         muk.fs.up()
         muk.filesystem.choosenidx = 0
         muk.filesystem.fillFilesystem(muk.fs.ls())
-
-      elif key == Key.J or key == Key.Down:
-        muk.filesystem.nextChoosenidx()
-      elif key == Key.K or key == Key.Up:
-        muk.filesystem.prevChoosenidx()
-      elif key == Key.PageDown:
-        muk.filesystem.nextChoosenidx(10)
-      elif key == Key.PageDown:
-        muk.filesystem.prevChoosenidx(10)
-
-      elif key == Key.A:
-        # filesystem.choosenidx -= 1
-        muk.addToPlaylist(muk.fs.currentPath / muk.filesystem.element())
-        # muk.ctx.addToPlaylist filesystem.element()
-        muk.filesystem.nextChoosenidx()
-
-
-    ## Volume
-    if key == Key.Plus:
+    of MukAddStuff:
+      muk.addToPlaylist(muk.fs.currentPath / muk.filesystem.element())
+      muk.filesystem.nextChoosenidx()
+    of MukVolumeUp:
       muk.volumeRelative(20)
-    if key == Key.Minus:
+    of MukVolumeDown:
       muk.volumeRelative(-20)
-    if key == Key.M:
+    of MukMuteToggle:
       muk.toggleMute()
-
-    ## Show video
-    if key == Key.V:
+    of MukVideoToggle:
       muk.ctx.command(@["cycle", "video"])
+    else:
+      discard
 
     if key == Key.Mouse:
       let coords = getMouse()
