@@ -89,8 +89,8 @@ Changelog
 TODO
 - ~~0.1.0 (First usable version)~~
 
-- 0.0.9 (Prototype)
-  - STUFF
+- 0.0.1 (Prototype)
+  - no client/server
 
 Technologie / Credits
 -----------
