@@ -28,6 +28,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.ShiftS] = MukUnShuffle
 
   result[Key.Colon] = MukDirUp
+  result[Key.Backspace] = MukDirUp
 
   result[Key.Plus] = MukVolumeUp
   result[Key.Minus] = MukVolumeDown

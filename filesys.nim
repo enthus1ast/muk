@@ -1,4 +1,4 @@
-import os
+import os, algorithm
 type
   ActionKind* {.pure.} = enum
     File, Folder, None
@@ -32,18 +32,21 @@ proc down*(fs: Filesystem, folder: string) =
     fs.currentPath = newPath
 
 proc ls*(fs: Filesystem): seq[string] =
-  result.add ".."
+  # result.add ".."
+  var elems: seq[string] = @[]
   for (kind, path) in walkDir(fs.currentPath):
     var line: string # = path
     if kind == pcDir or kind == pcLinkToDir:
       line = path.lastPathPart() # & "/"
-      result.add line
+      elems.add line
     elif kind == pcFile or kind == pcLinkToFile:
       line = path.lastPathPart()
       # echo line ,  line.splitFile().ext, fs.supportedExt
       # quit()
       if fs.supportedExt.contains(line.splitFile().ext):
-        result.add line
+        elems.add line
+  elems.sort()
+  return @[".."] & elems
 
 proc action*(fs: Filesystem, path: string): Action =
   let actionPath = (fs.currentPath / path).absolutePath()
