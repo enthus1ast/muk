@@ -34,7 +34,7 @@ Keyboard Binding
 | BOTH | {i} | Open debug log / song information |
 | BOTH | {g}/{/}| Search |
 | BOTH | {?}/{F1} | Help |
-| BOTH | ~~{ESC}~~ | Exit out of search/help/lyrics etc. |
+| BOTH | {ESC} | Exit out of search/help/lyrics etc. |
 | Filesystem | {ShiftG} | Search recursive |
 | Filesystem | {:}/{Backspace} | One folder up |
 | Filesystem | {a} | Add song/directory to playlist |
@@ -55,7 +55,7 @@ Features
 - [ ] One click, up and download, music from client <-> server
 - [ ] ~~Lyric fetcher~~ (low priority)
 - [ ] Cross platform
-  - [x] Linux
+  - [ ] Linux (not tested here yet)
   - [x] Windows
   - [ ] ~~Macos~~ (low priority, need testers)
   - [ ] ssh, tmux, etc..
