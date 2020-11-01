@@ -10,6 +10,14 @@ Uses the mighty `mpv` as audio backend.
 
 ![Image of muk prototype](https://github.com/enthus1ast/muk/blob/master/img.png)
 
+Usage
+-----
+
+put the `muk` binary on the path.
+Then cd into your musik folder (or edit the config and add your music dir)
+
+then:
+`muk.exe`
 
 
 Keyboard Binding
