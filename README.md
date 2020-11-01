@@ -8,6 +8,9 @@ Uses the mighty `mpv` as audio backend.
 
 'mukke' is a german slang for music.
 
+![Image of muk prototype](https://github.com/enthus1ast/muk/blob/master/img.png)
+
+
 
 Keyboard Binding
 ----------------
