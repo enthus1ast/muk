@@ -52,6 +52,8 @@ proc defaultKeybindingPlaylist*(): Keybinding =
   result[Key.PageUp] = MukUpFastPlaylist
   result[Key.PageDown] = MukDownFastPlaylist
   result[Key.D] = MukRemoveSong
+  result[Key.O] = MukSelectCurrentSongPlaylist
+
 
 proc defaultKeybindingFilesystem*(): Keybinding =
   result = defaultKeybindingGlobal()
@@ -62,7 +64,13 @@ proc defaultKeybindingFilesystem*(): Keybinding =
   result[Key.PageUp] = MukUpFastFilesystem
   result[Key.PageDown] = MukDownFastFilesystem
   result[Key.A] = MukAddStuff
+  result[Key.G] = MukSearchOpen
+  result[Key.Slash] = MukSearchOpen
 
+
+proc defaultKeybindingSearch*(): Keybinding =
+  result[Key.Escape] = MukSearchCancel
+  result[Key.Enter] = MukSearchDone
 
 proc toMukEvent*(keybinding: Keybinding, key: Key): MukEvent =
   return keybinding.getOrDefault(key, MukUnknown)

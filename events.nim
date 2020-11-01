@@ -39,3 +39,9 @@ type
 
     MukQuitGui
     MukQuitAll
+
+    MukSelectCurrentSongPlaylist
+
+    MukSearchOpen
+    MukSearchCancel
+    MukSearchDone

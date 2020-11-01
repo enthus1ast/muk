@@ -28,13 +28,15 @@ Keyboard Binding
 | BOTH | {p} | Pause/Resum |
 | BOTH | {v} | Show/Hide video |
 | BOTH | {c} | Clear the playlist |
-| BOTH | ~~{g}/{/}~~ | Search |
+| BOTH | {i} | Open debug log / song information |
+| BOTH | {g}/{/}| Search |
 | BOTH | {?}/{F1} | Help |
 | BOTH | ~~{ESC}~~ | Exit out of search/help/lyrics etc. |
 | Filesystem | {ShiftG} | Search recursive |
 | Filesystem | {:}/{Backspace} | One folder up |
 | Filesystem | {a} | Add song/directory to playlist |
 | Playlist | {d}/{Del} | Remove a song from the playlist |
+| Playlist | {o} | select the song that is played currently |
 | Playlist | ~~??????~~ | Fetch lyrics |
 
 
@@ -57,7 +59,7 @@ Features
 - [x] Video support when running on a window manager
 - [x] mouse support
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
-- [ ] custom keybindings
+- [x] custom keybindings (requires recompilation ATM)
 - [ ] custom colorscheme
 
 Network Protocol
