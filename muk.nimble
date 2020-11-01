@@ -13,4 +13,4 @@ requires "nim >= 1.4.0"
 requires "illwill"
 requires "illwillWidgets"
 requires "nim-mpv"
-
+requires "dbg"
