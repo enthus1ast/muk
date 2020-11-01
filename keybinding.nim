@@ -37,6 +37,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.V] = MukVideoToggle
 
   result[Key.Home] = MukToMusicDir1
+  result[Key.Zero] = MukToMusicDir1
 
   result[Key.Q] = MukQuitGui
   result[Key.ShiftQ] = MukQuitAll

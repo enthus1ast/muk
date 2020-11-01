@@ -1,6 +1,7 @@
 ## https://github.com/mpv-player/mpv/blob/master/etc/input.conf
 # --display-tags  String list (default: Artist,Album,Album_Artist,Comment,Composer,Date,Description,Genre,Performer,Rating,Series,Title,Track,icy-title,service_name)
-
+var doRender = 0
+var idleSteps = 0
 import os
 import mpv
 import asyncdispatch
@@ -152,12 +153,14 @@ proc foo(muk: Muk) {.async.} =
     # echo "foo"
 
 proc banner(muk: Muk) =
-  muk.tb.write 1, 1, "                  __    ";
-  muk.tb.write 1, 2, ".--------..--.--.|  |--.";
-  muk.tb.write 1, 3, "|        ||  |  ||    < ";
-  muk.tb.write 1, 4, "|__|__|__||_____||__|__|";
-  muk.tb.write 1, 5, "                        ";
-  muk.tb.write 1, 5, "  prototype             ";
+  muk.tb.write 10, 3, "                  __    ";
+  muk.tb.write 10, 4, ".--------..--.--.|  |--.";
+  muk.tb.write 10, 5, "|        ||  |  ||    < ";
+  muk.tb.write 10, 6, "|__|__|__||_____||__|__|";
+  muk.tb.write 10, 7, "                        ";
+  muk.tb.write 10, 8, "  prototype             ";
+  muk.tb.write 10, 9, "PRESS ENTER TO CONTINUE ";
+  muk.tb.write 10, 10,"(THIS SAVES CPU CYLCES) ";
 
 proc exitProc() {.noconv.} =
   illwillDeinit()
@@ -579,11 +582,19 @@ proc main(): int =
 
     if key == Key.None:
       discard
+      idleSteps.inc
     elif key == Key.Mouse:
       muk.handleMouse(key)
     else:
       muk.handleKeyboard(key)
+      idleSteps = 0
 
+    if idleSteps > 500:
+      # "CPU saver" until illwill can do blocking reads
+      muk.banner()
+      muk.tb.display()
+      discard stdin.readLine()
+      idleSteps = 0
 
     # Special case for search
     # if key != Key.None and muk.txtSearch.focus:
@@ -654,21 +665,24 @@ proc main(): int =
 
     muk.playlist.fillPlaylistWidget(muk.getPlaylist()) # TODO not every tick...
 
-    try:
-      muk.tb.render(muk.filesystem)
-      muk.tb.render(muk.playlist)
-      muk.tb.render(muk.infSongPath)
-      muk.tb.render(muk.progSongProgress)
-      muk.tb.render(muk.progVolume)
-      muk.tb.render(muk.btnPlayPause)
-      if muk.inWidget == InWidget.Search:
-        muk.tb.render(muk.txtSearch)
-      if muk.debugInfo:
-        muk.tb.render(muk.infLog)
-      muk.tb.display()
-    except:
-      echo "COULD NOT RENDER"
-      echo getCurrentExceptionMsg()
+    doRender.inc
+    if doRender >= 4: # test if less rendering is also still good
+      doRender = 0
+      try:
+        muk.tb.render(muk.filesystem)
+        muk.tb.render(muk.playlist)
+        muk.tb.render(muk.infSongPath)
+        muk.tb.render(muk.progSongProgress)
+        muk.tb.render(muk.progVolume)
+        muk.tb.render(muk.btnPlayPause)
+        if muk.inWidget == InWidget.Search:
+          muk.tb.render(muk.txtSearch)
+        if muk.debugInfo:
+          muk.tb.render(muk.infLog)
+        muk.tb.display()
+      except:
+        echo "COULD NOT RENDER"
+        echo getCurrentExceptionMsg()
     sleep(35)
     # GC_fullCollect()
 
