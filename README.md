@@ -35,7 +35,7 @@ Keyboard Binding
 | BOTH | {ShiftJ, ShifK} | Next/Previous song |
 | BOTH | {Enter} | Play/Open |
 | BOTH | {m} | Mute/Unmute |
-| BOTH | {p} | Pause/Resum |
+| BOTH | {p} | Pause/Resume |
 | BOTH | {v} | Show/Hide video |
 | BOTH | {c} | Clear the playlist |
 | BOTH | {i} | Open debug log / song information |
