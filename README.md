@@ -40,7 +40,7 @@ Keyboard Binding
 | BOTH | {c} | Clear the playlist |
 | BOTH | {i} | Open debug log / song information |
 | BOTH | {g}/{/}| Search |
-| BOTH | {?}/{F1} | Help |
+| BOTH | {?}/{F1} | ~~Help~~ |
 | BOTH | {ESC} | Exit out of search/help/lyrics etc. |
 | Filesystem | {ShiftG} | Search recursive |
 | Filesystem | {:}/{Backspace} | One folder up |
