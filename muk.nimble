@@ -11,6 +11,6 @@ srcDir        = "src"
 
 requires "nim >= 1.4.0"
 requires "illwill"
-requires "illwillWidgets"
-requires "nim-mpv"
+requires "https://github.com/enthus1ast/illwillWidgets.git"
+requires "https://github.com/daniel-j/nim-mpv.git"
 requires "dbg"

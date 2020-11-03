@@ -6,14 +6,14 @@ export asyncnet
 export net
 
 type
-  ClientDisconnected = Exception
+  ClientDisconnected* = Exception
   Client* = ref object
     address*: string
     socket*: AsyncSocket
     peerAddr: (string, Port)
     localAddr: (string, Port)
 
-proc kill(client: Client) =
+proc kill*(client: Client) =
   if not client.socket.isClosed:
     try:
       client.socket.close()
@@ -45,7 +45,6 @@ proc newMsg*[T](msg: typedesc[T]): T =
   const kindName = ($T).split("_")[^1]
   result = T()
   result.kind = parseEnum[MessageTypes](kindName)
-
 
 proc send*[T](client: Client, msg: T): Future[void] {.async.} =
   try:
@@ -83,3 +82,13 @@ proc recv*[T](client: Client, kind: typedesc[T]): Future[T] {.async.} =
   if $result.kind != kindName:
     dbg "kind does not fit got: " & $result.kind & " expected: " & kindName
     client.kill()
+
+
+proc sendGood*(client: Client) {.async.} =
+  await client.send(newMsg Message_GOOD)
+
+proc sendBad*(client: Client) {.async.} =
+  await client.send(newMsg Message_BAD)
+
+proc sendViolation*(client: Client) {.async.} =
+  await client.send(newMsg Message_PROTOCOLVIOLATION)

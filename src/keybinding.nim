@@ -1,6 +1,11 @@
 import tables
 import illwill
 import events
+import hashes
+
+proc hash(key: Key): Hash =
+  return hash($key)
+
 type
   Keybinding* = Table[Key, MukEvent]
 
@@ -38,6 +43,12 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.Home] = MukToMusicDir1
   result[Key.Zero] = MukToMusicDir1
+
+  result[Key.One] = MukToMusicDir1
+  result[Key.Two] = MukToMusicDir2
+  result[Key.Three] = MukToMusicDir3
+  result[Key.Four] = MukToMusicDir4
+
 
   result[Key.Q] = MukQuitGui
   result[Key.ShiftQ] = MukQuitAll
