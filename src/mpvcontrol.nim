@@ -1,5 +1,6 @@
 import templates, json, strutils
 import mpv
+import tsonginfo
 
 proc getSongTitle*(ctx: ptr handle): string =
   tryIgnore: result = ctx.get_property("media-title")
@@ -10,13 +11,6 @@ proc getMetadata*(ctx: ptr handle): JsonNode =
     result = ctx.get_property("filtered-metadata").parseJson()
   except:
     result = %* {}
-
-type
-  SongInfo* = object ## Normalized song information (mpv gives json)
-    album*: string
-    artist*: string
-    title*: string
-    path*: string
 
 proc normalizeMetadata*(js: JsonNode): SongInfo =
   result = SongInfo()
@@ -48,6 +42,9 @@ proc togglePause*(ctx: ptr handle): bool =
   tryIgnore:
     ctx.command(@["cycle", "pause"])
     return ctx.getPause()
+
+proc setPause*(ctx: ptr handle, pause: bool) =
+  tryIgnore: ctx.command(@["pause", $pause])
 
 proc getMute*(ctx: ptr handle): bool =
   tryIgnore: result = ctx.get_property("mute").parseBool()
@@ -110,6 +107,12 @@ proc getPlaylist*(ctx: ptr handle): seq[PlaylistSong] =
 proc getProgressInPercent*(ctx: ptr handle): float =
   result = 0.0
   tryIgnore: result = (parseFloat ctx.get_property("percent-pos")).clamp(0.0, 100.0)
+
+proc getTimePos*(ctx: ptr handle): float =
+  tryIgnore: result = parseFloat(ctx.get_property("time-pos"))
+
+proc getDuration*(ctx: ptr handle): float =
+  tryIgnore: result = parseFloat(ctx.get_property("duration"))
 
 proc setProgressInPercent*(ctx: ptr handle, progress: float) =
   tryIgnore: ctx.set_property("percent-pos", $progress)

@@ -8,16 +8,35 @@ import messages, network
 import mpvcontrol
 import templates
 
+import tmukd
+
 const
   PORT = 8889.Port
   BIND_ADDR = "0.0.0.0"
 
-type
-  Mukd = ref object
-    server: AsyncSocket
-    running: bool
-    ctx: ptr handle
-    listening: HashSet[Client]
+
+
+### High level mpv control #############################################
+
+proc getFanout_PROGRESS(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.PROGRESS
+  var data = Fanout_PROGRESS()
+  data.percent = mukd.ctx.getProgressInPercent()
+  data.timePos = mukd.ctx.getTimePos()
+  data.duration = mukd.ctx.getDuration()
+  result.data = %* data
+
+proc getFanout_METADATA(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.METADATA
+  result.data = %* mukd.ctx.getMetadata().normalizeMetadata()
+
+proc getFanout_PAUSE(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.PAUSE
+  result.data = %* mukd.ctx.getPause().Fanout_PAUSE
+#########################################################################
 
 
 proc newMukd(): Mukd =
@@ -92,19 +111,19 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
   ## Informs a newly connected client about the current status
   ## This sends all the relevant infos to bring the client gui
   ## to an informed state
-  var fan = newMsg(Message_Server_FANOUT)
+  var fan: Message_Server_FANOUT
   tryIgnore:
-    fan.data = %* {$PAUSE: mukd.ctx.getPause()}
+    fan = mukd.getFanout_PAUSE
     await mukd.fanout(fan)
 
   tryIgnore:
-    fan = newMsg(Message_Server_FANOUT)
-    fan.data = %* mukd.ctx.getMetadata().normalizeMetadata()
+    # fan = newMsg(Message_Server_FANOUT)
+    # fan.data = %* mukd.ctx.getMetadata().normalizeMetadata()
+    fan = mukd.getFanout_METADATA()
     await mukd.fanout(fan)
 
   tryIgnore:
-    fan = newMsg(Message_Server_FANOUT)
-    fan.data = %* {"PROGRESS": mukd.ctx.getProgressInPercent()}
+    fan = mukd.getFanout_PROGRESS()
     await mukd.fanout(fan)
 
 #  tryIgnore:
@@ -123,7 +142,14 @@ proc handleListening(mukd: Mukd, client: Client) {.async.} =
 proc handleControl(mukd: Mukd, client: Client) {.async.} =
   dbg "Handle control"
   while mukd.running:
-    let msg = await client.recv(Message_Client_CONTROL)
+
+    var msg: Message_Client_CONTROL
+    try:
+      msg = await client.recv(Message_Client_CONTROL)
+    except:
+      dbg "could not receive Message_Client_CONTROL"
+      client.kill()
+      return
     echo msg
     case msg.controlKind
     of LOADFILE:
@@ -136,11 +162,14 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
 
       fan.data = %* {$LOADFILE: msg.data.getStr()}
       await mukd.fanout(fan)
+    of ControlKind.PAUSE:
+      mukd.ctx.setPause(msg.data.to(Control_Client_PAUSE))
+      var fan = mukd.getFanout_PAUSE()
+      await mukd.fanout(fan)
     of TOGGLE_PAUSE:
       # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
-      let val = mukd.ctx.togglePause()
-      var fan = newMsg(Message_Server_FANOUT)
-      fan.data = %* {$PAUSE: val}
+      discard mukd.ctx.togglePause()
+      var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
 
       fan = newMsg(Message_Server_FANOUT)
@@ -186,6 +215,9 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
       if mpvevent == "none":
         await sleepAsync(250)
         continue
+      if mpvevent == "metadata-update":
+        var fan = mukd.getFanout_METADATA()
+        await mukd.fanout fan
       var msg = newMsg(Message_Server_FANOUT)
       msg.data = %* {"DEBUG": $mpvevent}
       await mukd.fanout(msg)
@@ -215,8 +247,8 @@ proc testFanout(mukd: Mukd) {.async.} =
 
     # let rr = rand(5).int
     if not mukd.ctx.getPause():
-      var msg = newMsg(Message_Server_FANOUT)
-      msg.data = %* {"PROGRESS": mukd.ctx.getProgressInPercent()}
+      var msg = mukd.getFanout_PROGRESS()
+       #%* {"PROGRESS": mukd.ctx.getProgressInPercent()}
       await mukd.fanout(msg)
     # if rr == 2:
     #   msg.data = %* @["foo", "baa", "baz"]

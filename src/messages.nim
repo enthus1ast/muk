@@ -1,4 +1,5 @@
 from json import JsonNode
+import tsonginfo
 type
   SocketPurpose* {.pure.} = enum
     Unknown
@@ -25,10 +26,8 @@ type
     LOADFILE,
     PAUSE,
     TOGGLE_PAUSE
-  # FanoutDataKind* {.pure.} = enum
-    # UNKNOWN
-    # METADATA
   Control_Client_LOADFILE* = string
+  Control_Client_PAUSE* = bool
   # Control_Client_LOADFILE* = string
   # Control_LOADFILE* = string
   Message_Client_CONTROL* = object of Message
@@ -44,7 +43,20 @@ type
     error*: string
 
   # DataKind* = enum
+  FanoutDataKind* {.pure.} = enum
+    UNKNOWN,
+    METADATA,
+    PROGRESS,
+    PAUSE
+  # FanoutData* = object of RootObj
+  #   kind: FanoutDataKind
+  Fanout_PROGRESS* = object
+    percent*: float
+    timePos*: float
+    duration*: float
 
+  Fanout_PAUSE* = bool
+  Fanout_METADATA* = SongInfo
   Message_Server_FANOUT* = object of Message
-    # dataKind*: DataKind
+    dataKind*: FanoutDataKind
     data*: JsonNode

@@ -63,25 +63,30 @@ proc recv*[T](client: Client, kind: typedesc[T]): Future[T] {.async.} =
   if line == "":
     raise newException(ClientDisconnected, client.address)
 
-  var js: JsonNode
+  var js: JsonNode = JsonNode() # Declare an empty one to do not crash later
   try:
     js = line.parseJson()
   except:
     dbg "Could not parse json. KILL CLIENT: " & client.address
     dbg getCurrentExceptionMsg()
     client.kill()
+    raise newException(ClientDisconnected, client.address)
 
   try:
+    ## TODO the crash is fixed in nim Devel, ignore for now (i'am on Nim 1.4)
     result = js.to(T)
   except:
     dbg "Could not convert json to " & $T & " KILL CLIENT:" & client.address
     client.kill()
+    raise newException(ClientDisconnected, client.address)
+
 
   const kindName = ($kind).split("_")[^1]
 
   if $result.kind != kindName:
     dbg "kind does not fit got: " & $result.kind & " expected: " & kindName
     client.kill()
+    raise newException(ClientDisconnected, client.address)
 
 
 proc sendGood*(client: Client) {.async.} =
