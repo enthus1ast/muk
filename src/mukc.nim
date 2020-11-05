@@ -2,17 +2,17 @@ import messages, network, dbg, asyncnet, json
 import tsonginfo
 
 type
-  ChangeCb = proc ()
-  ClientStatus = ref object
-    progress: Fanout_PROGRESS
-    metadata: Fanout_METADATA
-    pause: Fanout_PAUSE
-  Mukc = ref object
-    control: Client
-    listening: Client
-    running: bool
+  # ChangeCb = proc ()
+  ClientStatus* = ref object
+    progress*: Fanout_PROGRESS
+    metadata*: Fanout_METADATA
+    pause*: Fanout_PAUSE
+  Mukc* = ref object
+    control*: Client
+    listening*: Client
+    running*: bool
 
-proc newMukc(): Mukc =
+proc newMukc*(): Mukc =
   result = Mukc()
   result.running = true
   result.control = Client() # TODO call this Remote
@@ -32,7 +32,7 @@ proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
     # if not mukc.listening.socket.isClosed: mukc.listening.socket.close()
     return false
 
-proc authenticate(mukc: Mukc, username, password: string): Future[bool] {.async.} =
+proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async.} =
   # let msg = newMsg(Message_Client_Auth(username: username, password: password))
   var msg = newMsg(Message_Client_Auth)
   msg.username = username
@@ -71,7 +71,8 @@ proc recvFanout(mukc: Mukc) {.async.} =
     # echo "j: ", js
     # echo "FANOUT:", parseJson(await mukc.listening.socket.recvLine())
     let msg = await mukc.listening.recv(Message_Server_Fanout)
-    echo msg
+    when isMainModule:
+      echo msg
     # st.inc 4500
     # echo st
     # await sleepAsync st
@@ -91,12 +92,13 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
   # echo repr cs
 
 # proc collectFanouts(mukc: Mukc, cs: ClientStatus, changeCb: ChangeCb) {.async.} =
-proc collectFanouts(mukc: Mukc, cs: ClientStatus) {.async.} =
+proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
   ## This updates the ClientStatus with updates from the server.
   ## The client status is rendered by the `muk` terminal music player.
   while mukc.running:
     let fan = await mukc.listening.recv(Message_Server_FANOUT)
-    echo fan
+    when isMainModule:
+      echo fan
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
