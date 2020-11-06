@@ -71,6 +71,9 @@ proc addToPlaylistAndPlay*(ctx: ptr handle, file: string) =
   # tryIgnore ctx.command(@)
   # addToPlaylistAndPlay
 
+proc playlistPlayIndex*(ctx: ptr handle, index: int) =
+  tryIgnore ctx.command(@["playlist-play-index", $index])
+
 proc nextFromPlaylist*(ctx: ptr handle) =
   tryIgnore ctx.command("playlist-next")
 

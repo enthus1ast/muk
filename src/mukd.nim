@@ -224,6 +224,12 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.volumeRelative(msg.data.to(Control_Client_VOLUMERELATIV))
       var fan = mukd.getFanout_VOLUME() # TODO
       await mukd.fanout(fan)
+    of PLAYINDEX:
+      mukd.ctx.playlistPlayIndex(msg.data.to(Control_Client_PLAYINDEX))
+    of NEXTSONG:
+      mukd.ctx.nextFromPlaylist()
+    of PREVSONG:
+      mukd.ctx.prevFromPlaylist()
     else:
       discard
 
@@ -261,56 +267,32 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
     try:
       let event = mukd.ctx.wait_event(0)
       let mpvevent = mpv.event_name(event.event_id)
+      echo mpvevent
       if mpvevent == "none":
         await sleepAsync(250)
         continue
-      if mpvevent == "metadata-update":
+      elif mpvevent == "metadata-update":
         var fan = mukd.getFanout_METADATA()
+        await mukd.fanout fan
+      elif mpvevent == "tracks-changed":
+        var fan = mukd.getFanout_PLAYLIST()
         await mukd.fanout fan
       var msg = newMsg(Message_Server_FANOUT)
       msg.data = %* {"DEBUG": $mpvevent}
       await mukd.fanout(msg)
     except:
       discard
-      # if mpvevent != "none":
-      #   discard
-      #   # muk.log($mpvevent)
-      # if mpvevent == "end-file":
-      #   discard
-      # if mpvevent == "metadata-update":
-      #   discard
-        # let rawMetadata = muk.ctx.getMetadata()
-        # muk.log($rawMetadata)
-        # let songInfo = rawMetadata.normalizeMetadata()
-        # muk.log(repr songInfo)
-        # muk.currentSongInfo = songInfo
-        # muk.currentSongInfo.path = muk.ctx.getSongPath()
+
 
 import random
 proc testFanout(mukd: Mukd) {.async.} =
   while mukd.running:
     await sleepAsync(500)
-    # await sleepAsync(5000)
-    # let msg = newMsg(Message_Server_GOOD)
     echo "."
 
-    # let rr = rand(5).int
     if not mukd.ctx.getPause():
       var msg = mukd.getFanout_PROGRESS()
-       #%* {"PROGRESS": mukd.ctx.getProgressInPercent()}
       await mukd.fanout(msg)
-    # if rr == 2:
-    #   msg.data = %* @["foo", "baa", "baz"]
-    # elif rr == 3:
-    #   msg.data = %* "FOO"
-    # elif rr == 4:
-    #   msg.data = %* 123123
-    # else:
-    #   msg.data = %* [1,2,3,4]
-
-
-
-
 
 when isMainModule:
   echo newMsg(Message_Server_AUTH)

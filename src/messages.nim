@@ -31,13 +31,17 @@ type
     SEEKRELATIVE,
     PERCENTPOS,
     TOGGLEMUTE,
-    VOLUMERELATIV
+    VOLUMERELATIV,
+    PLAYINDEX,
+    NEXTSONG,
+    PREVSONG
   Control_Client_SEEKRELATIVE*  = float
   Control_Client_VOLUMERELATIV*  = float
   Control_Client_PERCENTPOS* = float
   Control_Client_LOADFILE* = string
   Control_Client_LOADFILEAPPEND* = string
   Control_Client_PAUSE* = bool
+  Control_Client_PLAYINDEX* = int
   Message_Client_CONTROL* = object of Message
     data*: JsonNode
     controlKind*: ControlKind

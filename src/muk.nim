@@ -18,6 +18,7 @@ import mukc
 import stack
 import mpvcontrol
 import network, messages
+import times
 # import search
 import tplaylist
 
@@ -185,18 +186,13 @@ proc fillPlaylistWidget(chooseBox: var ChooseBox, playlistSongs: PlaylistSongs) 
   for idx, song in playlistSongs:
     chooseBox.elements.add song.filename
     if song.current:
-      chooseBox.highlightIdx = idx #song.id - 1
-
-
-import times
+      chooseBox.highlightIdx = idx
 
 proc formatDuration(dur: Duration): string =
   let dp = dur.toParts()
   result &= ($dp[Hours]).align(2, '0') & ":"
   result &= ($dp[Minutes]).align(2, '0') & ":"
   result &= ($dp[Seconds]).align(2, '0')
-  # result &= ($dp[Milliseconds]).align(3, '0')
-
 
 proc infoCurrentSongDurationSeconds(muk: Muk): string =
   result = ""
@@ -223,6 +219,7 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
 
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
+    asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
     discard # TODO
   elif muk.inWidget == InWidget.Filesystem:
@@ -283,11 +280,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukDebugInfo:
     muk.debugInfo = not muk.debugInfo
   of MukPrevFromPlaylist:
-    # muk.ctx.prevFromPlaylist()
-    discard # TODO
+    asyncCheck muk.mukc.prevFromPlaylist()
   of MukNextFromPlaylist:
-    # muk.ctx.nextFromPlaylist()
-    discard # TODO
+    asyncCheck muk.mukc.nextFromPlaylist()
   of MukClearPlaylist:
     # muk.ctx.clearPlaylist()
     discard # TODO
@@ -383,7 +378,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     discard
 
   if key == Key.Enter:
-    # muk.ctx.command("loadfile", """C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3""")
     muk.openAction()
 
 
@@ -404,8 +398,7 @@ proc handleMouse(muk: Muk, key: Key) =
   ## Click on pause
   ev = muk.tb.dispatch(muk.btnPlayPause, coords)
   if ev.contains MouseDown:
-    discard muk.mukc.togglePause()
-    discard # TODO
+    asyncCheck muk.mukc.togglePause()
 
   ## Add filesystem file to playlist
   ev = muk.tb.dispatch(muk.filesystem, coords)
@@ -420,6 +413,7 @@ proc handleMouse(muk: Muk, key: Key) =
     muk.log(muk.playlist.element())
     # muk.ctx.play (playlist.element())
     # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
+    asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
 
   ## Search

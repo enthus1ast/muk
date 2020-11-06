@@ -56,7 +56,23 @@ proc loadRemoteFile*(mukc: Mukc, path: string, append: bool) {.async.} =
   msg.data = %* data
   await mukc.control.send(msg)
 
-  # await mukc.control.send(msg.fillData(data)) # BUG https://github.com/nim-lang/Nim/issues/15861
+proc playlistPlayIndex*(mukc: Mukc, index: int) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = PLAYINDEX
+  msg.data = %* index.Control_Client_PLAYINDEX
+  await mukc.control.send(msg)
+
+proc nextFromPlaylist*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = NEXTSONG
+  msg.data = %* nil
+  await mukc.control.send(msg)
+
+proc prevFromPlaylist*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = PREVSONG
+  msg.data = %* nil
+  await mukc.control.send(msg)
 
 proc toggleMute*(mukc: Mukc) {.async.} =
   var msg = newMsg Message_Client_CONTROL
