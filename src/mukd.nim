@@ -47,6 +47,10 @@ proc getFanout_VOLUME(mukd: Mukd): Message_Server_FANOUT =
   result.dataKind = FanoutDataKind.VOLUME
   result.data = %* mukd.ctx.getVolume().Fanout_VOLUME
 
+proc getFanout_PLAYLIST(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.PLAYLIST
+  result.data = %* mukd.ctx.getPlaylist().Fanout_PLAYLIST
 #########################################################################
 
 
@@ -141,6 +145,12 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
     fan = mukd.getFanout_VOLUME()
     await mukd.fanout(fan)
 
+  tryIgnore:
+    fan = mukd.getFanout_PLAYLIST()
+    await mukd.fanout(fan)
+
+
+
 #  tryIgnore:
 #     fan = newMsg(Message_Server_FANOUT)
 #     fan.data = %* mukd.ctx.()
@@ -182,8 +192,13 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       # var songInfo: SongInfo = mukd.ctx.getMetadata().normalizeMetadata()
       # songInfo.path = mukd.ctx.getSongPath()
       # fan.data = %* songInfo # {$LOADFILE: msg.data.getStr()}
-
-      fan.data = %* {$LOADFILE: msg.data.getStr()}
+      # fan.data = %* {$LOADFILE: msg.data.getStr()}
+      fan = mukd.getFanout_PLAYLIST()
+      await mukd.fanout(fan)
+    of LOADFILEAPPEND:
+      mukd.ctx.addToPlaylistAndPlay(msg.data.to(Control_Client_LOADFILEAPPEND))
+      var fan = newMsg(Message_Server_FANOUT)
+      fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of ControlKind.PAUSE:
       mukd.ctx.setPause(msg.data.to(Control_Client_PAUSE))

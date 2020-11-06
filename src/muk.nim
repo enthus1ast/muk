@@ -19,6 +19,7 @@ import stack
 import mpvcontrol
 import network, messages
 # import search
+import tplaylist
 
 import keybinding, events
 
@@ -28,7 +29,6 @@ type
     Playlist, Filesystem, Search
 
   Muk = ref object
-    # ctx: ptr handle ## the libmpv context
     mukc: Mukc
     cs: ClientStatus
     fs: Filesystem
@@ -37,7 +37,7 @@ type
     debugInfo: bool
     inWidget: InWidget
     inWidgetStack: Stack[InWidget]
-    currentSongInfo: SongInfo
+    # currentSongInfo: SongInfo
 
     # Gui widgets
     filesystem: ChooseBox
@@ -180,7 +180,7 @@ proc doColorSchema(tb: var TerminalBuffer) =
   tb.setForegroundColor(fgGreen)
   tb.clear(" ")
 
-proc fillPlaylistWidget(chooseBox: var ChooseBox, playlistSongs: seq[PlaylistSong]) =
+proc fillPlaylistWidget(chooseBox: var ChooseBox, playlistSongs: PlaylistSongs) =
   chooseBox.elements = @[]
   for idx, song in playlistSongs:
     chooseBox.elements.add song.filename
@@ -230,6 +230,7 @@ proc openAction(muk: Muk) =
     muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
     case act.kind
     of ActionKind.File:
+      # muk.mukc
       # muk.ctx.addToPlaylistAndPlay(muk.fs.currentPath / muk.filesystem.element())
       discard # TODO
     of ActionKind.Folder:
@@ -333,8 +334,8 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.filesystemOpenDir(muk.fs.currentPath)
     muk.filesystem.filter = ""
   of MukAddStuff:
-    # muk.ctx.addToPlaylist(muk.fs.currentPath / muk.filesystem.element())
-    # muk.filesystem.nextChoosenidx()
+    asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+    muk.filesystem.nextChoosenidx()
     discard # TODO
   of MukVolumeUp:
     asyncCheck muk.mukc.setVolumeRelative(20)
@@ -547,7 +548,7 @@ proc main(): int =
 
     muk.progVolume.value = muk.cs.volume
 
-    # muk.playlist.fillPlaylistWidget(muk.ctx.getPlaylist()) # TODO not every tick...
+    muk.playlist.fillPlaylistWidget(muk.cs.playlist) # TODO not every tick...
 
     doRender.inc
     if doRender >= 4: # test if less rendering is also still good
@@ -571,7 +572,6 @@ proc main(): int =
     # sleep(35)
     poll(35)
 
-    # GC_fullCollect()
 
   return 0
 

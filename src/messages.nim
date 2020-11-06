@@ -1,5 +1,6 @@
 from json import JsonNode
 import tsonginfo
+import tplaylist
 type
   SocketPurpose* {.pure.} = enum
     Unknown
@@ -24,6 +25,7 @@ type
   ControlKind* {.pure.} = enum
     UNKNOWN,
     LOADFILE,
+    LOADFILEAPPEND,
     PAUSE,
     TOGGLEPAUSE,
     SEEKRELATIVE,
@@ -34,6 +36,7 @@ type
   Control_Client_VOLUMERELATIV*  = float
   Control_Client_PERCENTPOS* = float
   Control_Client_LOADFILE* = string
+  Control_Client_LOADFILEAPPEND* = string
   Control_Client_PAUSE* = bool
   Message_Client_CONTROL* = object of Message
     data*: JsonNode
@@ -53,7 +56,8 @@ type
     PROGRESS,
     MUTE,
     PAUSE,
-    VOLUME
+    VOLUME,
+    PLAYLIST
   Fanout_PROGRESS* = object
     percent*: float
     timePos*: float
@@ -62,6 +66,7 @@ type
   Fanout_PAUSE* = bool
   Fanout_MUTE* = bool
   Fanout_METADATA* = SongInfo
+  Fanout_PLAYLIST* = PlaylistSongs
   Message_Server_FANOUT* = object of Message
     dataKind*: FanoutDataKind
     data*: JsonNode

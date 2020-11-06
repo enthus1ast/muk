@@ -1,5 +1,5 @@
 import messages, network, dbg, asyncnet, json
-import tsonginfo
+import tsonginfo, tplaylist
 
 type
   # ChangeCb = proc ()
@@ -8,6 +8,7 @@ type
     metadata*: Fanout_METADATA
     pause*: Fanout_PAUSE
     volume*: Fanout_VOLUME
+    playlist*: Fanout_PLAYLIST
   Mukc* = ref object
     control*: Client
     listening*: Client
@@ -45,11 +46,16 @@ proc togglePause*(mukc: Mukc) {.async.} =
   msg.data = %* nil
   await mukc.control.send(msg)
 
-proc loadRemoteFile*(mukc: Mukc, path: string) {.async.} =
+proc loadRemoteFile*(mukc: Mukc, path: string, append: bool) {.async.} =
   var msg = newMsg Message_Client_CONTROL
   var data: Control_Client_LOADFILE = path
-  msg.controlKind = LOADFILE
+  if append:
+    msg.controlKind = LOADFILEAPPEND
+  else:
+    msg.controlKind = LOADFILE
   msg.data = %* data
+  await mukc.control.send(msg)
+
   # await mukc.control.send(msg.fillData(data)) # BUG https://github.com/nim-lang/Nim/issues/15861
 
 proc toggleMute*(mukc: Mukc) {.async.} =
@@ -141,6 +147,7 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
     of FanoutDataKind.PROGRESS: cs.progress = fan.data.to(Fanout_PROGRESS)
     of FanoutDataKind.PAUSE: cs.pause = fan.data.to(Fanout_PAUSE)
     of FanoutDataKind.VOLUME: cs.volume = fan.data.to(Fanout_VOLUME)
+    of FanoutDataKind.PLAYLIST: cs.playlist = fan.data.to(Fanout_PLAYLIST)
     else:
       discard
   except:

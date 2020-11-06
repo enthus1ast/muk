@@ -1,6 +1,7 @@
 import templates, json, strutils
 import mpv
 import tsonginfo
+import tplaylist
 
 proc getSongTitle*(ctx: ptr handle): string =
   tryIgnore: result = ctx.get_property("media-title")
@@ -80,13 +81,7 @@ proc clearPlaylist*(ctx: ptr handle) =
   # tryIgnore ctx.command("playlist-clear")
   tryIgnore ctx.command("stop")
 
-type
-  PlaylistSong* = object
-    filename*: string
-    current*: bool
-    id*: int
-
-proc getPlaylist*(ctx: ptr handle): seq[PlaylistSong] =
+proc getPlaylist*(ctx: ptr handle): PlaylistSongs =
   let js = ($ctx.get_property("playlist")).parseJson()
   # echo js
   for dic in js.getElems:
