@@ -36,6 +36,17 @@ proc getFanout_PAUSE(mukd: Mukd): Message_Server_FANOUT =
   result = newMsg(Message_Server_FANOUT)
   result.dataKind = FanoutDataKind.PAUSE
   result.data = %* mukd.ctx.getPause().Fanout_PAUSE
+
+proc getFanout_MUTE(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.MUTE
+  result.data = %* mukd.ctx.getMute().Fanout_MUTE
+
+proc getFanout_VOLUME(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.VOLUME
+  result.data = %* mukd.ctx.getVolume().Fanout_VOLUME
+
 #########################################################################
 
 
@@ -126,6 +137,10 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
     fan = mukd.getFanout_PROGRESS()
     await mukd.fanout(fan)
 
+  tryIgnore:
+    fan = mukd.getFanout_VOLUME()
+    await mukd.fanout(fan)
+
 #  tryIgnore:
 #     fan = newMsg(Message_Server_FANOUT)
 #     fan.data = %* mukd.ctx.()
@@ -152,6 +167,14 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       return
     echo msg
     case msg.controlKind
+    of PERCENTPOS:
+      mukd.ctx.setProgressInPercent(msg.data.to(Control_Client_PERCENTPOS))
+      var fan = mukd.getFanout_PROGRESS()
+      await mukd.fanout(fan)
+    of SEEKRELATIVE:
+      mukd.ctx.seekRelative(msg.data.to(Control_Client_SEEKRELATIVE))
+      var fan = mukd.getFanout_PROGRESS()
+      await mukd.fanout(fan)
     of LOADFILE:
       mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       var fan = newMsg(Message_Server_FANOUT)
@@ -166,14 +189,25 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.setPause(msg.data.to(Control_Client_PAUSE))
       var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
-    of TOGGLE_PAUSE:
+    of TOGGLEPAUSE:
       # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       discard mukd.ctx.togglePause()
       var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
-
       fan = newMsg(Message_Server_FANOUT)
       fan.data = %* mukd.ctx.getProgressInPercent()
+      await mukd.fanout(fan)
+    of TOGGLEMUTE:
+      # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
+      discard mukd.ctx.toggleMute()
+      var fan = mukd.getFanout_MUTE() # TODO
+      await mukd.fanout(fan)
+      # fan = newMsg(Message_Server_FANOUT)
+      # fan.data = %* mukd.ctx.getProgressInPercent()
+      # await mukd.fanout(fan)
+    of VOLUMERELATIV:
+      mukd.ctx.volumeRelative(msg.data.to(Control_Client_VOLUMERELATIV))
+      var fan = mukd.getFanout_VOLUME() # TODO
       await mukd.fanout(fan)
     else:
       discard

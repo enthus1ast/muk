@@ -17,6 +17,7 @@ import mukc
 
 import stack
 import mpvcontrol
+import network, messages
 # import search
 
 import keybinding, events
@@ -75,17 +76,6 @@ proc newMuk(): Muk =
   result.musikDir2 = result.config.getSectionValue("musicDirs", "musicDir2")
   result.musikDir3 = result.config.getSectionValue("musicDirs", "musicDir3")
   result.musikDir4 = result.config.getSectionValue("musicDirs", "musicDir4")
-  # result.ctx = mpv.create()
-  # if result.ctx.isNil:
-  #   echo "failed creating mpv context"
-  #   return
-  # # defer: mpv.terminate_destroy(result.ctx) # must be in muk destructor
-  # result.ctx.set_option("terminal", "no")
-  # result.ctx.set_option("video", "no")
-  # result.ctx.set_option("input-default-bindings", "yes")
-  # result.ctx.set_option("input-vo-keyboard", "no")
-  # result.ctx.set_option("osc", true)
-  # check_error result.ctx.initialize()
   result.fs = newFilesystem()
 
   # TODO The layout IS this values are overwritten done in "layout()"
@@ -181,20 +171,9 @@ proc log(muk: Muk, msg: string) =
 
 proc getProgressInPercent(muk: Muk): float =
   result = 0.0
-  # tryIgnore: result = (parseFloat muk.ctx.get_property("percent-pos")).clamp(0.0, 100.0)
   tryIgnore: result = muk.cs.progress.percent.clamp(0.0, 100.0)
 
-proc setProgressInPercent(muk: Muk, progress: float) =
-  # tryIgnore: muk.ctx.set_property("percent-pos", $progress)
-  discard
 
-# proc normalizeMetadata*(js: JsonNode): SongInfo =
-#   result = SongInfo()
-#   for rawKey, rawVal in js:
-#     let key = rawKey.toLowerAscii()
-#     if   key == "title": result.title = rawVal.getStr()
-#     elif key == "album": result.album = rawVal.getStr()
-#     elif key == "artist": result.artist = rawVal.getStr()
 
 proc doColorSchema(tb: var TerminalBuffer) =
   tb.setBackgroundColor(bgBlack)
@@ -215,8 +194,8 @@ proc formatDuration(dur: Duration): string =
   let dp = dur.toParts()
   result &= ($dp[Hours]).align(2, '0') & ":"
   result &= ($dp[Minutes]).align(2, '0') & ":"
-  result &= ($dp[Seconds]).align(2, '0') & ":"
-  result &= ($dp[Milliseconds]).align(3, '0')
+  result &= ($dp[Seconds]).align(2, '0')
+  # result &= ($dp[Milliseconds]).align(3, '0')
 
 
 proc infoCurrentSongDurationSeconds(muk: Muk): string =
@@ -283,22 +262,16 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukQuitAll, MukQuitGui:
     muk.quitGui()
   of MukPauseToggle:
-    # discard muk.ctx.togglePause()
-    discard # TODO
+    discard muk.mukc.togglePause()
   of MukSeekForward:
-    # muk.ctx.seekRelative(3)
-    discard # TODO
+    asyncCheck muk.mukc.setSeekRelative(3)
   of MukSeekBackward:
-    # muk.ctx.seekRelative(-3)
-    discard # TODO
+    asyncCheck muk.mukc.setSeekRelative(-3)
   of MukSeekForwardFast:
-    # muk.ctx.seekRelative(15)
-    discard # TODO
+    asyncCheck muk.mukc.setSeekRelative(15)
   of MukSeekBackwardFast:
-    # muk.ctx.seekRelative(-15)
-    discard # TODO
+    asyncCheck muk.mukc.setSeekRelative(-15)
   of MukSwitchPane:
-    # if muk.ctx.inWidget == InWidget.Playlist
     case muk.inWidget
     of InWidget.Playlist:
       muk.inWidget = InWidget.Filesystem
@@ -306,9 +279,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
       muk.inWidget = InWidget.Playlist
     of InWidget.Search:
       discard
-    #   muk.inWidget = InWidget.Playlist
-    # muk.inPlaylist = not muk.inPlaylist
-    # muk.log($(muk.inPlaylist))
   of MukDebugInfo:
     muk.debugInfo = not muk.debugInfo
   of MukPrevFromPlaylist:
@@ -367,15 +337,11 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     # muk.filesystem.nextChoosenidx()
     discard # TODO
   of MukVolumeUp:
-    # muk.ctx.volumeRelative(20)
-    discard # TODO
+    asyncCheck muk.mukc.setVolumeRelative(20)
   of MukVolumeDown:
-    # muk.ctx.volumeRelative(-20)
-    discard # TODO
+    asyncCheck muk.mukc.setVolumeRelative(-20)
   of MukMuteToggle:
-    # discard muk.ctx.toggleMute()
-    discard # TODO
-
+    asyncCheck muk.mukc.toggleMute()
   of MukSearchOpen:
     muk.inWidget = InWidget.Search
     muk.txtSearch.focus = true
@@ -428,13 +394,16 @@ proc handleMouse(muk: Muk, key: Key) =
   ## Seek in song
   ev = muk.tb.dispatch(muk.progSongProgress, coords)
   if ev.contains MouseDown:
-    muk.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
+    asyncCheck muk.mukc.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
+    # var cnt: Control_Client_SEEKRELATIVE
+    # cnt =
+    #  muk.progSongProgress.valueOnPos(coords))
+    # muk.mukc.control.send
 
   ## Click on pause
   ev = muk.tb.dispatch(muk.btnPlayPause, coords)
   if ev.contains MouseDown:
-    # muk.ctx.setProgressInPercent(progSongProgress.valueOnPos(coords))
-    # discard muk.ctx.togglePause()
+    discard muk.mukc.togglePause()
     discard # TODO
 
   ## Add filesystem file to playlist
@@ -500,7 +469,6 @@ proc main(): int =
 
   while true:
 
-    poll()
 
     if oldDimenions != terminalSize():
       # for idx in 0 .. 3:
@@ -577,7 +545,7 @@ proc main(): int =
     muk.playlist.highlight = muk.inWidget == InWidget.Playlist
     muk.playlist.chooseEnabled = muk.inWidget == InWidget.Playlist
 
-    # muk.progVolume.value = muk.ctx.getVolume()
+    muk.progVolume.value = muk.cs.volume
 
     # muk.playlist.fillPlaylistWidget(muk.ctx.getPlaylist()) # TODO not every tick...
 
@@ -599,7 +567,10 @@ proc main(): int =
       except:
         echo "COULD NOT RENDER"
         echo getCurrentExceptionMsg()
-    sleep(35)
+
+    # sleep(35)
+    poll(35)
+
     # GC_fullCollect()
 
   return 0

@@ -33,6 +33,15 @@ proc newClient*(address: string, socket: AsyncSocket): Client =
   # result.peerAddr = socket.getPeerAddr() # need this for hashing, socket could be gone when we want to remove
   result.localAddr = socket.getLocalAddr() # need this for hashing, socket could be gone when we want to remove
 
+## Bug https://github.com/nim-lang/Nim/issues/15861
+# proc fillData*[T](msgControl: Message_Client_CONTROL, data: T): Message_Client_CONTROL =
+#   result = msgControl
+#   # result.data = %* data
+#   echo data.type
+#   var controlKind = ($type(data)).split("_")[^1]
+#   echo controlKind
+#   result.controlKind = parseEnum[ControlKind](controlKind)
+
 # proc newMsg*[T](msg: typedesc[T] | T): var T =
 #   const kindName = ($T).split("_")[^1]
 #   when msg.type == typedesc[T]:
@@ -77,6 +86,8 @@ proc recv*[T](client: Client, kind: typedesc[T]): Future[T] {.async.} =
     result = js.to(T)
   except:
     dbg "Could not convert json to " & $T & " KILL CLIENT:" & client.address
+    echo line
+    echo js
     client.kill()
     raise newException(ClientDisconnected, client.address)
 

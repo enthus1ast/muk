@@ -25,11 +25,16 @@ type
     UNKNOWN,
     LOADFILE,
     PAUSE,
-    TOGGLE_PAUSE
+    TOGGLEPAUSE,
+    SEEKRELATIVE,
+    PERCENTPOS,
+    TOGGLEMUTE,
+    VOLUMERELATIV
+  Control_Client_SEEKRELATIVE*  = float
+  Control_Client_VOLUMERELATIV*  = float
+  Control_Client_PERCENTPOS* = float
   Control_Client_LOADFILE* = string
   Control_Client_PAUSE* = bool
-  # Control_Client_LOADFILE* = string
-  # Control_LOADFILE* = string
   Message_Client_CONTROL* = object of Message
     data*: JsonNode
     controlKind*: ControlKind
@@ -42,20 +47,20 @@ type
   Message_PROTOCOLVIOLATION* = object of Message
     error*: string
 
-  # DataKind* = enum
   FanoutDataKind* {.pure.} = enum
     UNKNOWN,
     METADATA,
     PROGRESS,
-    PAUSE
-  # FanoutData* = object of RootObj
-  #   kind: FanoutDataKind
+    MUTE,
+    PAUSE,
+    VOLUME
   Fanout_PROGRESS* = object
     percent*: float
     timePos*: float
     duration*: float
-
+  Fanout_VOLUME* = float
   Fanout_PAUSE* = bool
+  Fanout_MUTE* = bool
   Fanout_METADATA* = SongInfo
   Message_Server_FANOUT* = object of Message
     dataKind*: FanoutDataKind

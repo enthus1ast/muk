@@ -7,17 +7,72 @@ type
     progress*: Fanout_PROGRESS
     metadata*: Fanout_METADATA
     pause*: Fanout_PAUSE
+    volume*: Fanout_VOLUME
   Mukc* = ref object
     control*: Client
     listening*: Client
     running*: bool
+
+## High level network controls #########################
+proc setProgressInPercent*(mukc: Mukc, progress: float) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_PERCENTPOS = progress
+  msg.controlKind = PERCENTPOS
+  msg.data = %* data
+  # msg = msg.fillData(data) # BUG https://github.com/nim-lang/Nim/issues/15861
+  await mukc.control.send(msg)
+
+proc setSeekRelative*(mukc: Mukc, seek: float) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_SEEKRELATIVE = seek
+  msg.controlKind = SEEKRELATIVE
+  msg.data = %* data
+  # msg = msg.fillData(data) # BUG https://github.com/nim-lang/Nim/issues/15861
+  await mukc.control.send(msg)
+
+proc setPause*(mukc: Mukc, pause: bool) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_PAUSE = pause
+  msg.controlKind = Control_Kind.PAUSE
+  msg.data = %* data
+  await mukc.control.send(msg)
+  # await mukc.control.send(msg.fillData(data)) # BUG https://github.com/nim-lang/Nim/issues/15861
+
+proc togglePause*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  # var data: Control_Client_TOGGLEPAUSE = nil
+  msg.controlKind = Control_Kind.TOGGLEPAUSE
+  msg.data = %* nil
+  await mukc.control.send(msg)
+
+proc loadRemoteFile*(mukc: Mukc, path: string) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_LOADFILE = path
+  msg.controlKind = LOADFILE
+  msg.data = %* data
+  # await mukc.control.send(msg.fillData(data)) # BUG https://github.com/nim-lang/Nim/issues/15861
+
+proc toggleMute*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  # var data: Control_Client_TOGGLEPAUSE = nil
+  msg.controlKind = Control_Kind.TOGGLEMUTE
+  msg.data = %* nil
+  await mukc.control.send(msg)
+
+proc setVolumeRelative*(mukc: Mukc, volume: float) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_VOLUMERELATIV = volume
+  msg.controlKind = Control_Kind.VOLUMERELATIV
+  msg.data = %* data
+  await mukc.control.send(msg)
+
+########################################################
 
 proc newMukc*(): Mukc =
   result = Mukc()
   result.running = true
   result.control = Client() # TODO call this Remote
   result.listening = Client() # TODO call this Remote
-
 
 proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
   ## Connect to a mukd. Returns false if connection is not possible
@@ -85,6 +140,7 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
     of FanoutDataKind.METADATA: cs.metadata = fan.data.to(Fanout_METADATA)
     of FanoutDataKind.PROGRESS: cs.progress = fan.data.to(Fanout_PROGRESS)
     of FanoutDataKind.PAUSE: cs.pause = fan.data.to(Fanout_PAUSE)
+    of FanoutDataKind.VOLUME: cs.volume = fan.data.to(Fanout_VOLUME)
     else:
       discard
   except:

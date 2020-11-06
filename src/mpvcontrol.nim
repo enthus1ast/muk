@@ -23,10 +23,10 @@ proc normalizeMetadata*(js: JsonNode): SongInfo =
 proc getSongPath*(ctx: ptr handle): string =
   tryIgnore: result = ctx.get_property("path")
 
-proc seekRelative*(ctx: ptr handle, seconds = 0) =
+proc seekRelative*(ctx: ptr handle, seconds: float = 0.0) =
   tryIgnore:ctx.command(@["seek", $seconds, "relative", "exact"])
 
-proc volumeRelative*(ctx: ptr handle, num = 0) =
+proc volumeRelative*(ctx: ptr handle, num: float = 0.0) =
   tryIgnore:ctx.command(@["add", "volume", $num])
 
 proc getVolume*(ctx: ptr handle): float =
