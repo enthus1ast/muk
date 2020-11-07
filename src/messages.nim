@@ -34,9 +34,12 @@ type
     VOLUMERELATIV,
     PLAYINDEX,
     NEXTSONG,
-    PREVSONG
-  Control_Client_SEEKRELATIVE*  = float
-  Control_Client_VOLUMERELATIV*  = float
+    PREVSONG,
+    REMOVESONG,
+    CLEARPLAYLIST
+  Control_Client_REMOVESONG* = int
+  Control_Client_SEEKRELATIVE* = float
+  Control_Client_VOLUMERELATIV* = float
   Control_Client_PERCENTPOS* = float
   Control_Client_LOADFILE* = string
   Control_Client_LOADFILEAPPEND* = string

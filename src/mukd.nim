@@ -1,5 +1,5 @@
 ## This is the muk server part.
-import net, asyncnet, asyncdispatch, json, strutils
+import net, asyncnet, asyncdispatch, json, strutils, os
 import dbg
 import mpv
 import sets
@@ -7,7 +7,9 @@ import hashes
 import messages, network
 import mpvcontrol
 import templates
+import parsecfg
 
+import tsonginfo
 import tmukd
 
 const
@@ -59,6 +61,7 @@ proc newMukd(): Mukd =
   result.running = true
   result.server = newAsyncSocket()
   result.server.setSockOpt(OptReuseAddr, true)
+  result.config = loadConfig(getAppDir() / "mukd.ini")
 
 proc initMpv(mukd: Mukd) =
   mukd.ctx = mpv.create()
@@ -96,7 +99,7 @@ proc handleAuth(mukd: Mukd, client: Client): Future[bool] {.async.} =
 
 proc fanoutOne[T](mukd: Mukd, msg: T, listeningClient: Client) {.async.} =
   try:
-    echo "FANOUT to: ", listeningClient.address
+    # echo "FANOUT to: ", listeningClient.address
     await listeningClient.send(msg)
     var answerFuture = listeningClient.recv(Message_GOOD)
     let inTime = await withTimeout(answerFuture, 5000) ## really discard?
@@ -230,6 +233,12 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.nextFromPlaylist()
     of PREVSONG:
       mukd.ctx.prevFromPlaylist()
+    of REMOVESONG:
+      mukd.ctx.removeSong(msg.data.to(Control_Client_REMOVESONG))
+      var fan = mukd.getFanout_PLAYLIST() # TODO
+      await mukd.fanout(fan)
+    of CLEARPLAYLIST:
+      mukd.ctx.clearPlaylist()
     else:
       discard
 
@@ -262,18 +271,32 @@ proc serve(mukd: Mukd) {.async.} =
     var client = newClient(address, socket)
     asyncCheck mukd.handleClient(client)
 
+proc callForSong(mukd: Mukd, metadata: SongInfo) =
+  ## Calls the binary specified in "callForSong"
+  tryIgnore:
+    let cmdRaw = mukd.config.getSectionValue("", "callForSong")
+    let cmd = cmdRaw % [
+      "artist", metadata.artist,
+      "title", metadata.title,
+      "album", metadata.album,
+      "path", metadata.path
+    ]
+    echo cmd
+    discard execShellCmd(cmd)
+
 proc fanoutMpvEvents(mukd: Mukd) {.async.} =
   while mukd.running:
     try:
       let event = mukd.ctx.wait_event(0)
       let mpvevent = mpv.event_name(event.event_id)
-      echo mpvevent
+      # echo mpvevent
       if mpvevent == "none":
         await sleepAsync(250)
         continue
       elif mpvevent == "metadata-update":
         var fan = mukd.getFanout_METADATA()
         await mukd.fanout fan
+        mukd.callForSong(mukd.ctx.getMetadata().normalizeMetadata())
       elif mpvevent == "tracks-changed":
         var fan = mukd.getFanout_PLAYLIST()
         await mukd.fanout fan
@@ -283,12 +306,11 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
     except:
       discard
 
-
 import random
 proc testFanout(mukd: Mukd) {.async.} =
   while mukd.running:
     await sleepAsync(500)
-    echo "."
+    # echo "."
 
     if not mukd.ctx.getPause():
       var msg = mukd.getFanout_PROGRESS()

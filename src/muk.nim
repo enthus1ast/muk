@@ -284,9 +284,7 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukNextFromPlaylist:
     asyncCheck muk.mukc.nextFromPlaylist()
   of MukClearPlaylist:
-    # muk.ctx.clearPlaylist()
-    discard # TODO
-
+    asyncCheck muk.mukc.clearPlaylist()
   of MukDownPlaylist:
     muk.playlist.nextChoosenidx()
   of MukUpPlaylist:
@@ -321,8 +319,7 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     # muk.ctx.command("playlist-unshuffle")
     discard # TODO
   of MukRemoveSong:
-    # tryIgnore muk.ctx.command("playlist-remove", $muk.playlist.choosenIdx)
-    discard # TODO
+    asyncCheck muk.mukc.removeSong(muk.playlist.choosenIdx)
   of MukDirUp:
     muk.fs.up()
     muk.filesystem.choosenidx = 0
@@ -356,7 +353,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.txtSearch.text = ""
     muk.txtSearch.caretIdx = 0 # TODO bug in illwillWidgets
     muk.filesystem.filter = ""
-
   of MukVideoToggle:
     # muk.ctx.command(@["cycle", "video"])
     discard # TODO
@@ -383,17 +379,12 @@ proc handleKeyboard(muk: Muk, key: var Key) =
 
 proc handleMouse(muk: Muk, key: Key) =
   let coords = getMouse()
-  # muk.log($coords)
   var ev: Events
 
   ## Seek in song
   ev = muk.tb.dispatch(muk.progSongProgress, coords)
   if ev.contains MouseDown:
     asyncCheck muk.mukc.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
-    # var cnt: Control_Client_SEEKRELATIVE
-    # cnt =
-    #  muk.progSongProgress.valueOnPos(coords))
-    # muk.mukc.control.send
 
   ## Click on pause
   ev = muk.tb.dispatch(muk.btnPlayPause, coords)
@@ -411,23 +402,12 @@ proc handleMouse(muk: Muk, key: Key) =
   if (ev.contains MouseDown) and (coords.button == mbRight):
     muk.inWidget = InWidget.Playlist
     muk.log(muk.playlist.element())
-    # muk.ctx.play (playlist.element())
-    # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
     asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
 
   ## Search
   if muk.inWidget == InWidget.Search:
     ev = muk.tb.dispatch(muk.txtSearch, coords)
-    # if (ev.contains MouseDown) and (coords.button == mbRight):
-    #   muk.inWidget = InWidget.Playlist
-    #   muk.log(muk.playlist.element())
-    #   # muk.ctx.play (playlist.element())
-    #   muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
-
-
-  # ev = muk.tb.dispatch(muk.playlist, coords)
-  # if (ev.contains MouseDown) and (coords.button == mbRight):
 
 proc renderCurrentSongInfo(muk: Muk): string =
   result = ""
@@ -436,10 +416,8 @@ proc renderCurrentSongInfo(muk: Muk): string =
   result &= muk.cs.metadata.title & " | "
   result &= muk.cs.metadata.path
 
-
 proc main(): int =
   var muk = newMuk()
-
   if waitFor muk.mukc.connect("127.0.0.1", 8889.Port):
     if waitFor muk.mukc.authenticate("foo", "baa"):
       asyncCheck muk.mukc.collectFanouts(muk.cs)
@@ -448,34 +426,22 @@ proc main(): int =
   # muk.tb.display()
   # sleep(1500)
 
-  # asyncCheck foo(muk)
-  ## Testing
-  # muk.ctx.addToPlaylist """C:\Users\david\ttt.mp4"""
-  # muk.ctx.addToPlaylist """C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3"""
   result = 1
-  # var currentPath = """C:\Users\david\Music\2016 - Nonagon Infinity\"""
 
-  # var currentPath = """D:\audio_books\Der Herr der Ringe (Hörbuch)\Der Herr der Ringe - Band 1 - Die Gefährten\"""
-  # var currentPath = """D:/backup/IBC_new_2020_07_29/public/files/2019-08/"""
-  # muk.fs.currentPath = currentPath
   muk.filesystemOpenDir(getCurrentDir().absolutePath())
   muk.layout()
   var oldDimenions = terminalSize()
 
   while true:
-
-
     if oldDimenions != terminalSize():
-      # for idx in 0 .. 3:
       muk.tb = newTerminalBuffer(terminalSize().w, terminalSize().h)
       muk.tb.clear(" ")
       muk.tb.display()
       muk.layout()
       sleep(50)
       oldDimenions = terminalSize()
-    # let event = muk.ctx.wait_event(0) # TODO
-    var key = getKey()
 
+    var key = getKey()
     if key == Key.None:
       discard
       idleSteps.inc
@@ -499,27 +465,6 @@ proc main(): int =
       if muk.tb.handleKey(muk.txtSearch, key):
         muk.log("key handled: " & muk.txtSearch.text)
 
-
-    # try:
-    #   let mpvevent = mpv.event_name(event.event_id)
-    #   if mpvevent != "none":
-    #     muk.log($mpvevent)
-    #   if mpvevent == "end-file":
-    #     discard
-    #   if mpvevent == "metadata-update":
-    #     let rawMetadata = muk.ctx.getMetadata()
-    #     muk.log($rawMetadata)
-    #     let songInfo = rawMetadata.normalizeMetadata()
-    #     muk.log(repr songInfo)
-    #     muk.currentSongInfo = songInfo
-    #     muk.currentSongInfo.path = muk.ctx.getSongPath()
-    #   if event.event_id == mpv.EVENT_SHUTDOWN:
-    #     break
-    # except:
-    #   discard
-
-
-    # muk.infSongPath.text = muk.getSongTitle() & " | " & muk.getSongPath()
     muk.infSongPath.text = muk.renderCurrentSongInfo()
 
     muk.progSongProgress.value = muk.getProgressInPercent()
@@ -562,12 +507,7 @@ proc main(): int =
       except:
         echo "COULD NOT RENDER"
         echo getCurrentExceptionMsg()
-
-    # sleep(35)
     poll(35)
-
-
   return 0
-
 
 system.quit(main())

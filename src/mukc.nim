@@ -88,6 +88,17 @@ proc setVolumeRelative*(mukc: Mukc, volume: float) {.async.} =
   msg.data = %* data
   await mukc.control.send(msg)
 
+proc removeSong*(mukc: Mukc, idx: int) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.REMOVESONG
+  msg.data = %* idx.Control_Client_REMOVESONG
+  await mukc.control.send(msg)
+
+proc clearPlaylist*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.CLEARPLAYLIST
+  msg.data = %* nil
+  await mukc.control.send(msg)
 ########################################################
 
 proc newMukc*(): Mukc =

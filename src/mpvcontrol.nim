@@ -81,8 +81,10 @@ proc prevFromPlaylist*(ctx: ptr handle) =
   tryIgnore ctx.command("playlist-prev")
 
 proc clearPlaylist*(ctx: ptr handle) =
-  # tryIgnore ctx.command("playlist-clear")
   tryIgnore ctx.command("stop")
+
+proc removeSong*(ctx: ptr handle, index: int) =
+  tryIgnore ctx.command("playlist-remove", $index)
 
 proc getPlaylist*(ctx: ptr handle): PlaylistSongs =
   let js = ($ctx.get_property("playlist")).parseJson()
