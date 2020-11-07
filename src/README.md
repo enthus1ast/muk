@@ -44,19 +44,19 @@ Keyboard Binding
 Features
 -------
 
-- [ ] Network Client/Server
-  - [ ] standalone gui
-  - [ ] standalone audio backend
-  - [ ] network code
+- [x] Network Client/Server
+  - [x] standalone gui
+  - [x] standalone audio backend
+  - [x] network code
     - [ ] secure networking
 - [ ] One click, up and download, music from client <-> server
-- [ ] ~~Lyric fetcher~~ (low priority)
+- [x] Lyric fetcher
 - [ ] Cross platform
-  - [x] Linux
+  - [ ] Linux
   - [x] Windows
   - [ ] ~~Macos~~ (low priority, need testers)
   - [ ] ssh, tmux, etc..
-- [x] Video support when running on a window manager
+- [ ] Video support when running on a window manager
 - [x] mouse support
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
 - [x] custom keybindings (requires recompilation ATM)

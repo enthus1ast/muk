@@ -14,6 +14,7 @@ import json
 import parsecfg
 import templates
 import mukc
+import tables
 
 import stack
 import mpvcontrol
@@ -38,6 +39,7 @@ type
     debugInfo: bool
     inWidget: InWidget
     inWidgetStack: Stack[InWidget]
+    lastSelectedIdx: Table[string, int]
     # currentSongInfo: SongInfo
 
     # Gui widgets
@@ -66,6 +68,12 @@ type
     artist: string
     title: string
     path: string
+
+proc storeLastSelectedIndex(muk: Muk, path: string, idx: int) =
+  muk.lastSelectedIdx[path] = idx
+
+proc getLastSelectedIndex(muk: Muk, path: string): int =
+  return muk.lastSelectedIdx.getOrDefault(path, 0)
 
 proc newMuk(): Muk =
   result = Muk()
@@ -234,6 +242,7 @@ proc openAction(muk: Muk) =
       muk.filesystem.choosenidx = 0
       muk.filesystemOpenDir(act.folderPath)
       muk.filesystem.filter = ""
+      muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
     else:
       discard
 
@@ -296,15 +305,19 @@ proc handleKeyboard(muk: Muk, key: var Key) =
 
   of MukDownFilesystem:
     muk.filesystem.nextChoosenidx()
+    muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
   of MukUpFilesystem:
     muk.filesystem.prevChoosenidx()
+    muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
   of MukUpFastFilesystem:
     muk.filesystem.prevChoosenidx(10)
+    muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
   of MukDownFastFilesystem:
     muk.filesystem.nextChoosenidx(10)
-
+    muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
   of MukToMusicDir1:
     muk.filesystemOpenDir(muk.musikDir1)
+    muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
   of MukToMusicDir2:
     muk.filesystemOpenDir(muk.musikDir2)
   of MukToMusicDir3:
@@ -322,8 +335,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     asyncCheck muk.mukc.removeSong(muk.playlist.choosenIdx)
   of MukDirUp:
     muk.fs.up()
-    muk.filesystem.choosenidx = 0
+    # muk.filesystem.choosenidx = 0
     muk.filesystemOpenDir(muk.fs.currentPath)
+    muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
     muk.filesystem.filter = ""
   of MukAddStuff:
     asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
