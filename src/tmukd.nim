@@ -1,4 +1,5 @@
 import sets, mpv, network, parsecfg
+import filesys
 type
   Mukd* = ref object
     server*: AsyncSocket
@@ -6,3 +7,4 @@ type
     ctx*: ptr handle
     listening*: HashSet[Client]
     config*: Config
+    fs*: Filesystem

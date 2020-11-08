@@ -8,6 +8,7 @@ import messages, network
 import mpvcontrol
 import templates
 import parsecfg
+import filesys
 
 import tsonginfo
 import tmukd
@@ -53,6 +54,24 @@ proc getFanout_PLAYLIST(mukd: Mukd): Message_Server_FANOUT =
   result = newMsg(Message_Server_FANOUT)
   result.dataKind = FanoutDataKind.PLAYLIST
   result.data = %* mukd.ctx.getPlaylist().Fanout_PLAYLIST
+
+# -----------------------------------------------------------------------
+proc getControl_FSLS(mukd: Mukd): Message_Server_CONTROL =
+  result = newMsg Message_Server_CONTROL
+  result.controlKind = FSLS
+  var fsls = Control_Server_FSLS()
+  fsls.listing = mukd.fs.ls()
+  fsls.currentPath = mukd.fs.currentPath
+  result.data = %* fsls
+
+proc getControl_ACTION(mukd: Mukd): Message_Server_CONTROL =
+  ## To inform the client about an action # TODO maybe send wich action
+  result = newMsg Message_Server_CONTROL
+  result.controlKind = FSACTION
+  result.data = %* nil
+
+
+
 #########################################################################
 
 
@@ -62,6 +81,7 @@ proc newMukd(): Mukd =
   result.server = newAsyncSocket()
   result.server.setSockOpt(OptReuseAddr, true)
   result.config = loadConfig(getAppDir() / "mukd.ini")
+  result.fs = newFilesystem()
 
 proc initMpv(mukd: Mukd) =
   mukd.ctx = mpv.create()
@@ -122,8 +142,12 @@ proc fanoutOne[T](mukd: Mukd, msg: T, listeningClient: Client) {.async.} =
       dbg "client gone.. in fanout: ", listeningClient.address
 
 proc fanout[T](mukd: Mukd, msg: T) {.async.} =
+  var msgcopy = msg
+  var idx = 0
   for listeningClient in mukd.listening:
-    asyncCheck fanoutOne(mukd, msg, listeningClient)
+    msgcopy.fid = idx
+    idx.inc
+    asyncCheck fanoutOne(mukd, msgcopy, listeningClient)
 
 proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
   ## Informs a newly connected client about the current status
@@ -213,7 +237,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
       fan = newMsg(Message_Server_FANOUT)
-      fan.data = %* mukd.ctx.getProgressInPercent()
+      fan.data = %* mukd.getFanout_PROGRESS()
       await mukd.fanout(fan)
     of TOGGLEMUTE:
       # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
@@ -235,10 +259,49 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.prevFromPlaylist()
     of REMOVESONG:
       mukd.ctx.removeSong(msg.data.to(Control_Client_REMOVESONG))
-      var fan = mukd.getFanout_PLAYLIST() # TODO
+      var fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of CLEARPLAYLIST:
       mukd.ctx.clearPlaylist()
+      var fan = mukd.getFanout_PLAYLIST()
+      await mukd.fanout(fan)
+
+
+    of FSLS:
+      var answer = mukd.getControl_FSLS()
+      await client.send(answer)
+    of FSACTION:
+      discard
+      let incoming = msg.data.to(Control_Client_FSACTION)
+      var act = mukd.fs.action(incoming)
+      case act.kind
+      of ActionKind.File:
+        discard
+        mukd.ctx.addToPlaylistAndPlay(mukd.fs.currentPath /  incoming )
+        var answer = mukd.getControl_ACTION()
+        await client.send(answer)
+      of ActionKind.Folder:
+        var answer = mukd.getControl_FSLS()
+        await client.send(answer)
+      else:
+        var answer = mukd.getControl_ACTION()
+        await client.send(answer)
+    of FSUP:
+      mukd.fs.up()
+      var answer = mukd.getControl_FSLS()
+      await client.send(answer)
+    # of FSCD:
+    #   discard
+      # let incoming = msg.data.to(Control_Client_FSCD)
+      # mukd.fs.cd(incoming)
+      # var answer = newMsg Message_Server_CONTROL
+      # answer.controlKind = FSLS
+      # answer.data = %* mukd.fs.ls().Control_Server_FSLS
+      # # await client.send(answer)
+      # # answer.controlKind = FSLS
+      # await client.send(answer)
+
+
     else:
       discard
 
@@ -320,6 +383,10 @@ when isMainModule:
   echo newMsg(Message_Server_AUTH)
   var mukd = newMukd()
   mukd.initMpv()
+
+  mukd.fs.currentPath = getCurrentDir().absolutePath()
+
+
   asyncCheck mukd.fanoutMpvEvents()
   asyncCheck mukd.testFanout()
   waitFor mukd.serve()

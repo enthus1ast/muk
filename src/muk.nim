@@ -8,16 +8,17 @@ import asyncdispatch
 import illwill
 import illwillWidgets
 import strutils
-import filesys
 import sequtils
 import json
 import parsecfg
 import templates
 import mukc
 import tables
-
 import stack
+
+import filesys
 import mpvcontrol
+
 import network, messages
 import times
 # import search
@@ -433,6 +434,8 @@ proc renderCurrentSongInfo(muk: Muk): string =
 proc main(): int =
   var muk = newMuk()
   if waitFor muk.mukc.connect("127.0.0.1", 8889.Port):
+  # if waitFor muk.mukc.connect("192.168.1.107", 8889.Port):
+  # if waitFor muk.mukc.connect("192.168.2.204", 8889.Port):
     if waitFor muk.mukc.authenticate("foo", "baa"):
       asyncCheck muk.mukc.collectFanouts(muk.cs)
 

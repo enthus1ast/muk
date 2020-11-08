@@ -36,7 +36,22 @@ type
     NEXTSONG,
     PREVSONG,
     REMOVESONG,
-    CLEARPLAYLIST
+    CLEARPLAYLIST,
+
+    FSLS,
+    FSACTION,
+    FSUP,
+    # FSCD,
+
+  Control_Client_FSLS* = string
+  Control_Client_FSACTION* = string
+  # Control_Client_FSCD* = string
+
+  Control_Server_FSLS* = object
+    listing*: seq[string]
+    currentPath*: string
+  # Control_Server_ACTION* = nil # TODO ?
+
   Control_Client_REMOVESONG* = int
   Control_Client_SEEKRELATIVE* = float
   Control_Client_VOLUMERELATIV* = float
@@ -48,8 +63,12 @@ type
   Message_Client_CONTROL* = object of Message
     data*: JsonNode
     controlKind*: ControlKind
+  Message_Server_CONTROL* = object of Message
+    data*: JsonNode
+    controlKind*: ControlKind
   Message_Server_AUTH* = object of Message
   Message_GOOD* = object of Message
+    fid*: int
   Message_BAD* = object of Message
   Message_Server_PURPOSE* = object of Message
   Message_Client_PURPOSE* = object of Message
@@ -77,3 +96,4 @@ type
   Message_Server_FANOUT* = object of Message
     dataKind*: FanoutDataKind
     data*: JsonNode
+    fid*: int

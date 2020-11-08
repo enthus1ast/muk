@@ -100,8 +100,10 @@ proc recv*[T](client: Client, kind: typedesc[T]): Future[T] {.async.} =
     raise newException(ClientDisconnected, client.address)
 
 
-proc sendGood*(client: Client) {.async.} =
-  await client.send(newMsg Message_GOOD)
+proc sendGood*(client: Client, fid = -1) {.async.} =
+  var good = newMsg Message_GOOD
+  good.fid = fid
+  await client.send(good)
 
 proc sendBad*(client: Client) {.async.} =
   await client.send(newMsg Message_BAD)
