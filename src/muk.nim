@@ -53,6 +53,12 @@ type
     txtSearch: TextBox
     progVolume: ProgressBar
 
+    btnRemote: Button
+
+    # This could later be a "buttonBar"?
+    chkRepeat: Checkbox
+    chkNext: Checkbox
+
     # Keybinding
     # TODO maybe do two/three keebindings for Filesystem/Playlist/help etc..
     keybindingPlaylist: Keybinding
@@ -99,6 +105,14 @@ proc newMuk(): Muk =
   result.txtSearch = newTextBox("", 0, 0, 0, color = fgWhite, bgcolor = bgCyan)
   result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 100.0)
 
+  result.btnRemote = newButton("R ", 0 ,0, 2 ,0, border = false, color = fgRed)
+
+  result.chkRepeat = newCheckbox("REP", 0, 0)
+  result.chkRepeat.color = fgWhite
+
+  result.chkNext = newCheckbox("NEX", 0, 0)
+  result.chkNext.color = fgWhite
+
 
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
   result.infLog.wrapMode = WrapMode.Char
@@ -114,15 +128,28 @@ proc newMuk(): Muk =
   result.keybindingSearch = defaultKeybindingSearch()
 
 proc layout(muk: Muk) =
-  muk.filesystem.x = 1
-  muk.filesystem.y = 1
+
+  muk.btnRemote.x = 0
+  muk.btnRemote.y = 0
+
+  muk.filesystem.x = 0
+  muk.filesystem.y = 0
   muk.filesystem.w = (terminalWidth() div 2) - 2
-  muk.filesystem.h = terminalHeight() - 5
+  muk.filesystem.h = terminalHeight() - 4
 
   muk.playlist.x = terminalWidth() div 2
-  muk.playlist.y = 1
+  muk.playlist.y = 0
   muk.playlist.w = terminalWidth() div 2
-  muk.playlist.h = terminalHeight() - 5
+  muk.playlist.h = terminalHeight() - 4
+
+
+  muk.chkRepeat.x = 0
+  muk.chkRepeat.y = terminalHeight() - 3
+
+  muk.chkNext.x = 9
+  muk.chkNext.y = terminalHeight() - 3
+
+
 
   muk.infLog.x = terminalWidth() div 2
   muk.infLog.y = 1
@@ -143,9 +170,9 @@ proc layout(muk: Muk) =
   muk.btnPlayPause.w = 2
   muk.btnPlayPause.h = 1
 
-  muk.txtSearch.x = 0
-  muk.txtSearch.y = terminalHeight() - 3
-  muk.txtSearch.w = terminalWidth() div 2
+  muk.txtSearch.x = 1
+  muk.txtSearch.y = terminalHeight() - 4
+  muk.txtSearch.w = (terminalWidth() div 2) - 3
 
   muk.progVolume.x = terminalWidth() - 13
   muk.progVolume.y = terminalHeight() - 3
@@ -408,17 +435,32 @@ proc handleMouse(muk: Muk, key: Key) =
 
   ## Add filesystem file to playlist
   ev = muk.tb.dispatch(muk.filesystem, coords)
+  if (ev.contains MouseDown) and (coords.button == mbLeft):
+    muk.inWidget = InWidget.Filesystem
   if (ev.contains MouseDown) and (coords.button == mbRight):
     muk.inWidget = InWidget.Filesystem
     muk.openAction()
 
   ## Play file from playlist
   ev = muk.tb.dispatch(muk.playlist, coords)
+  if (ev.contains MouseDown) and (coords.button == mbLeft):
+    muk.inWidget = InWidget.Playlist
   if (ev.contains MouseDown) and (coords.button == mbRight):
     muk.inWidget = InWidget.Playlist
     muk.log(muk.playlist.element())
     asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
+
+  ev = muk.tb.dispatch(muk.btnRemote, coords)
+  if ev.contains MouseDown:
+    # asyncCheck muk.mukc.togglePause()
+    discard # Toggle remote
+
+  # Repeat chkbox
+  ev = muk.tb.dispatch(muk.chkRepeat, coords)
+
+  # Next checkbox
+  ev = muk.tb.dispatch(muk.chkNext, coords)
 
   ## Search
   if muk.inWidget == InWidget.Search:
@@ -507,10 +549,11 @@ proc main(): int =
     muk.playlist.fillPlaylistWidget(muk.cs.playlist) # TODO not every tick...
 
     doRender.inc
-    if doRender >= 4: # test if less rendering is also still good
+    if doRender >= 0: # test if less rendering is also still good
       doRender = 0
       try:
         muk.tb.render(muk.filesystem)
+        muk.tb.render(muk.btnRemote)
         muk.tb.render(muk.playlist)
         muk.tb.render(muk.infSongPath)
         muk.tb.render(muk.progSongProgress)
@@ -520,6 +563,8 @@ proc main(): int =
           muk.tb.render(muk.txtSearch)
         if muk.debugInfo:
           muk.tb.render(muk.infLog)
+        muk.tb.render(muk.chkRepeat)
+        muk.tb.render(muk.chkNext)
         muk.tb.display()
       except:
         echo "COULD NOT RENDER"
