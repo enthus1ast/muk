@@ -8,6 +8,8 @@ Uses the mighty `mpv` as audio backend.
 
 'mukke' is a german slang for music.
 
+Warning, this is not "production grade", only use the
+network enabled muk/mukd only in trusted networks.
 
 Keyboard Binding
 ----------------
@@ -26,7 +28,8 @@ Keyboard Binding
 | BOTH | {m} | Mute/Unmute |
 | BOTH | {p} | Pause/Resum |
 | BOTH | {p} | Pause/Resum |
-| BOTH | {v} | Show/Hide video |
+| BOTH | {r} | Cycle Repeat Modes |
+| BOTH | {v} | ~Show/Hide video~ |
 | BOTH | {c} | Clear the playlist |
 | BOTH | {i} | Open debug log / song information |
 | BOTH | {g}/{/}| Search |
@@ -35,7 +38,7 @@ Keyboard Binding
 | Filesystem | {ShiftG} | Search recursive |
 | Filesystem | {:}/{Backspace} | One folder up |
 | Filesystem | {a} | Add song/directory to playlist |
-| Playlist | {d}/{Del} | Remove a song from the playlist |
+| Playlist | {d}/~{Del}~ | Remove a song from the playlist |
 | Playlist | {o} | select the song that is played currently |
 | Playlist | ~~??????~~ | Fetch lyrics |
 
@@ -50,12 +53,12 @@ Features
   - [x] network code
     - [ ] secure networking
 - [ ] One click, up and download, music from client <-> server
-- [x] Lyric fetcher
+- [x] Lyric fetcher (not yet intigrated)
 - [ ] Cross platform
-  - [ ] Linux
+  - [x] Linux
   - [x] Windows
   - [ ] ~~Macos~~ (low priority, need testers)
-  - [ ] ssh, tmux, etc..
+  - [x] ssh, tmux (no mouse support), etc..
 - [ ] Video support when running on a window manager
 - [x] mouse support
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
@@ -65,7 +68,8 @@ Features
 Network Protocol
 ----------------
 
-TODO
+Muk/Mukd is network enabled
+TODO document the network protocol
 
 Download / Install
 ---------

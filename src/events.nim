@@ -47,3 +47,6 @@ type
     MukSearchDone
 
     MukCycleRepeat
+
+    MukFilesystemLocal
+    MukFilesystemRemote

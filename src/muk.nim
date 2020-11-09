@@ -31,7 +31,8 @@ import keybinding, events
 type
   InWidget {.pure.} = enum
     Playlist, Filesystem, Search
-
+  FilesystemKind {.pure.} = enum
+    Local, Remote
   Muk = ref object
     mukc: Mukc
     cs: ClientStatus
@@ -42,6 +43,7 @@ type
     inWidget: InWidget
     inWidgetStack: Stack[InWidget]
     lastSelectedIdx: Table[string, int]
+    filesystemKind: FilesystemKind
     # currentSongInfo: SongInfo
 
     # Gui widgets
@@ -55,13 +57,17 @@ type
 
     progVolume: ProgressBar
 
-    btnRemote: Button
 
-    # This could later be a "buttonBar"?
+    # Repeat modes
     radGroupRep: RadioBoxGroup
     radRepNone: Checkbox
     radRepSong: Checkbox
     radRepList: Checkbox
+
+    # Remote or local filesystem
+    radGroupFilesys: RadioBoxGroup
+    radFilesysLocal: Checkbox
+    radFilesysRemote: Checkbox
 
 
     # Keybinding
@@ -110,8 +116,6 @@ proc newMuk(): Muk =
   result.txtSearch = newTextBox("", 0, 0, 0, color = fgWhite, bgcolor = bgCyan)
   result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 130.0)
 
-  result.btnRemote = newButton("R ", 0 ,0, 2 ,0, border = false, color = fgRed)
-
 
   result.radRepNone = newRadioBox("NONE", 5, 5)
   result.radRepNone.color = fgWhite
@@ -122,13 +126,24 @@ proc newMuk(): Muk =
   result.radGroupRep = newRadioBoxGroup(@[
     addr result.radRepNone, addr result.radRepSong, addr result.radRepList
   ])
-
   result.radRepNone.textChecked = "(X)"
   result.radRepNone.textUnchecked = "( )"
   result.radRepSong.textChecked = "(X)"
   result.radRepSong.textUnchecked = "( )"
   result.radRepList.textChecked = "(X)"
   result.radRepList.textUnchecked = "( )"
+
+  result.radFilesysLocal = newRadioBox("LOCAL", 10, 10)
+  result.radFilesysLocal.color = fgWhite
+  result.radFilesysRemote = newRadioBox("REMOTE", 15, 15)
+  result.radFilesysRemote.color = fgWhite
+  result.radGroupFilesys = newRadioBoxGroup(@[
+    addr result.radFilesysLocal, addr result.radFilesysRemote
+  ])
+  result.radFilesysLocal.textChecked = "(X)"
+  result.radFilesysLocal.textUnchecked = "( )"
+  result.radFilesysRemote.textChecked = "(X)"
+  result.radFilesysRemote.textUnchecked = "( )"
 
 
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
@@ -145,10 +160,6 @@ proc newMuk(): Muk =
   result.keybindingSearch = defaultKeybindingSearch()
 
 proc layout(muk: Muk) =
-
-  muk.btnRemote.x = 0
-  muk.btnRemote.y = 0
-
   muk.filesystem.x = 0
   muk.filesystem.y = 0
   muk.filesystem.w = (terminalWidth() div 2) - 2
@@ -159,7 +170,6 @@ proc layout(muk: Muk) =
   muk.playlist.w = terminalWidth() div 2
   muk.playlist.h = terminalHeight() - 4
 
-
   muk.radRepNone.x = 0
   muk.radRepNone.y = terminalHeight() - 3
   muk.radRepSong.x = 8
@@ -167,6 +177,10 @@ proc layout(muk: Muk) =
   muk.radRepList.x = 16
   muk.radRepList.y = terminalHeight() - 3
 
+  muk.radFilesysLocal.x = 26
+  muk.radFilesysLocal.y = terminalHeight() - 3
+  muk.radFilesysRemote.x = 35
+  muk.radFilesysRemote.y = terminalHeight() - 3
 
   muk.infLog.x = terminalWidth() div 2
   muk.infLog.y = 1
@@ -414,7 +428,10 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     discard # TODO
   of MukCycleRepeat:
     asyncCheck muk.mukc.cylceRepeat()
-    discard
+  of MukFilesystemLocal:
+    muk.filesystemKind = FilesystemKind.Local
+  of MukFilesystemRemote:
+    muk.filesystemKind = FilesystemKind.Remote
   of MukSelectCurrentSongPlaylist:
     muk.playlist.choosenIdx = muk.playlist.highlightIdx
   else:
@@ -471,16 +488,9 @@ proc handleMouse(muk: Muk, key: Key) =
     asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
 
-  ev = muk.tb.dispatch(muk.btnRemote, coords)
-  if ev.contains MouseDown:
-    # asyncCheck muk.mukc.togglePause()
-    discard # Toggle remote
-
   # Repeat chkbox
-  ev = muk.tb.dispatch(muk.radGroupRep, coords)
-
-  # # Next checkbox
-  # ev = muk.tb.dispatch(muk.chkNext, coords)
+  # TODO mouse disabled for now, only RPC for cycle RepeatKind (r) atm.
+  # ev = muk.tb.dispatch(muk.radGroupRep, coords)
 
   ## Search
   if muk.inWidget == InWidget.Search:
@@ -582,13 +592,20 @@ proc main(): int =
     of RepeatKind.List:
       muk.radRepList.checked = true
 
+    # The Local and Remote filesystem radio buttons
+    muk.radGroupFilesys.uncheckAll()
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      muk.radFilesysLocal.checked = true
+    of FilesystemKind.Remote:
+      muk.radFilesysRemote.checked = true
+
 
     doRender.inc
     if doRender >= 0: # test if less rendering is also still good
       doRender = 0
       try:
         muk.tb.render(muk.filesystem)
-        muk.tb.render(muk.btnRemote)
         muk.tb.render(muk.playlist)
         muk.tb.render(muk.infSongPath)
         muk.tb.render(muk.progSongProgress)
@@ -600,6 +617,7 @@ proc main(): int =
           muk.tb.render(muk.infLog)
 
         muk.tb.render(muk.radGroupRep)
+        muk.tb.render(muk.radGroupFilesys)
         muk.tb.write(24, terminalHeight() - 3, "|")
         # muk.tb.render(muk.chkRepeat)
         # muk.tb.render(muk.chkNext)

@@ -293,6 +293,12 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.setRepeatKind(mukd.repeatKind)
       var fan = mukd.getFanout_REPEATKIND()
       await mukd.fanout(fan)
+    of SETREPEAT:
+      mukd.repeatKind = msg.data.to(Control_Client_SETREPEAT)
+      mukd.setRepeatKind(mukd.repeatKind)
+      var fan = mukd.getFanout_REPEATKIND()
+      await mukd.fanout(fan)
+
     of FSLS:
       var answer = mukd.getControl_FSLS()
       await client.send(answer)

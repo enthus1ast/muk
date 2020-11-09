@@ -39,6 +39,7 @@ type
     REMOVESONG,
     CLEARPLAYLIST,
     CYCLEREPEAT,
+    SETREPEAT,
 
     FSLS,
     FSACTION,
@@ -86,7 +87,7 @@ type
     PAUSE,
     VOLUME,
     PLAYLIST,
-    REPEATKIND
+    REPEATKIND,
   Fanout_REPEATKIND* = RepeatKind
   Fanout_PROGRESS* = object
     percent*: float

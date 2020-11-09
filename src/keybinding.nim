@@ -51,6 +51,9 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.R] = MukCycleRepeat
 
+  result[Key.Comma] = MukFilesystemLocal
+  result[Key.Dot] = MukFilesystemRemote
+
   result[Key.Q] = MukQuitGui
   result[Key.ShiftQ] = MukQuitAll
 
