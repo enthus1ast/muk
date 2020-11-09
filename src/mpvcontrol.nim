@@ -116,3 +116,19 @@ proc getDuration*(ctx: ptr handle): float =
 
 proc setProgressInPercent*(ctx: ptr handle, progress: float) =
   tryIgnore: ctx.set_property("percent-pos", $progress)
+
+proc loopFile*(ctx: ptr handle, enabled: bool) =
+  var param = ""
+  if enabled:
+    param = "inf"
+  else:
+    param = "no"
+  tryIgnore: ctx.set_property("loop-file", $param)
+
+proc loopPlaylist*(ctx: ptr handle, enabled: bool) =
+  var param = ""
+  if enabled:
+    param = "inf"
+  else:
+    param = "no"
+  tryIgnore: ctx.set_property("loop-playlist", $param)

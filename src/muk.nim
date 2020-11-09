@@ -51,13 +51,17 @@ type
     progSongProgress: ProgressBar
     btnPlayPause: Button
     txtSearch: TextBox
+
     progVolume: ProgressBar
 
     btnRemote: Button
 
     # This could later be a "buttonBar"?
-    chkRepeat: Checkbox
-    chkNext: Checkbox
+    radGroupRep: RadioBoxGroup
+    radRepNone: Checkbox
+    radRepSong: Checkbox
+    radRepList: Checkbox
+
 
     # Keybinding
     # TODO maybe do two/three keebindings for Filesystem/Playlist/help etc..
@@ -103,15 +107,30 @@ proc newMuk(): Muk =
   result.progSongProgress.colorText = fgYellow
   result.btnPlayPause = newButton(">", 0, terminalHeight() - 1, 2, 1, false)
   result.txtSearch = newTextBox("", 0, 0, 0, color = fgWhite, bgcolor = bgCyan)
-  result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 100.0)
+  result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 130.0)
 
   result.btnRemote = newButton("R ", 0 ,0, 2 ,0, border = false, color = fgRed)
 
-  result.chkRepeat = newCheckbox("REP", 0, 0)
-  result.chkRepeat.color = fgWhite
 
-  result.chkNext = newCheckbox("NEX", 0, 0)
-  result.chkNext.color = fgWhite
+  result.radRepNone = newRadioBox("NONE", 5, 5)
+  result.radRepNone.color = fgWhite
+  result.radRepSong = newRadioBox("SONG", 10, 10)
+  result.radRepSong.color = fgWhite
+  result.radRepList = newRadioBox("LIST", 15, 15)
+  result.radRepList.color = fgWhite
+  result.radGroupRep = newRadioBoxGroup(@[
+    addr result.radRepNone, addr result.radRepSong, addr result.radRepList
+  ])
+
+  result.radRepNone.textChecked = "(X)"
+  result.radRepNone.textUnchecked = "( )"
+  result.radRepSong.textChecked = "(X)"
+  result.radRepSong.textUnchecked = "( )"
+  result.radRepList.textChecked = "(X)"
+  result.radRepList.textUnchecked = "( )"
+
+
+
 
 
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
@@ -137,18 +156,18 @@ proc layout(muk: Muk) =
   muk.filesystem.w = (terminalWidth() div 2) - 2
   muk.filesystem.h = terminalHeight() - 4
 
-  muk.playlist.x = terminalWidth() div 2
+  muk.playlist.x = (terminalWidth() div 2) - 1
   muk.playlist.y = 0
   muk.playlist.w = terminalWidth() div 2
   muk.playlist.h = terminalHeight() - 4
 
 
-  muk.chkRepeat.x = 0
-  muk.chkRepeat.y = terminalHeight() - 3
-
-  muk.chkNext.x = 9
-  muk.chkNext.y = terminalHeight() - 3
-
+  muk.radRepNone.x = 0
+  muk.radRepNone.y = terminalHeight() - 3
+  muk.radRepSong.x = 8
+  muk.radRepSong.y = terminalHeight() - 3
+  muk.radRepList.x = 16
+  muk.radRepList.y = terminalHeight() - 3
 
 
   muk.infLog.x = terminalWidth() div 2
@@ -372,9 +391,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.filesystem.nextChoosenidx()
     discard # TODO
   of MukVolumeUp:
-    asyncCheck muk.mukc.setVolumeRelative(20)
+    asyncCheck muk.mukc.setVolumeRelative(5)
   of MukVolumeDown:
-    asyncCheck muk.mukc.setVolumeRelative(-20)
+    asyncCheck muk.mukc.setVolumeRelative(-5)
   of MukMuteToggle:
     asyncCheck muk.mukc.toggleMute()
   of MukSearchOpen:
@@ -423,6 +442,9 @@ proc handleMouse(muk: Muk, key: Key) =
   let coords = getMouse()
   var ev: Events
 
+  if muk.debugInfo:
+    muk.log(coords.positionHelper())
+
   ## Seek in song
   ev = muk.tb.dispatch(muk.progSongProgress, coords)
   if ev.contains MouseDown:
@@ -457,10 +479,10 @@ proc handleMouse(muk: Muk, key: Key) =
     discard # Toggle remote
 
   # Repeat chkbox
-  ev = muk.tb.dispatch(muk.chkRepeat, coords)
+  ev = muk.tb.dispatch(muk.radGroupRep, coords)
 
-  # Next checkbox
-  ev = muk.tb.dispatch(muk.chkNext, coords)
+  # # Next checkbox
+  # ev = muk.tb.dispatch(muk.chkNext, coords)
 
   ## Search
   if muk.inWidget == InWidget.Search:
@@ -545,6 +567,10 @@ proc main(): int =
     muk.playlist.chooseEnabled = muk.inWidget == InWidget.Playlist
 
     muk.progVolume.value = muk.cs.volume
+    if muk.cs.mute:
+      muk.progVolume.text = "muted"
+    else:
+      muk.progVolume.text = $muk.cs.volume & "%"
 
     muk.playlist.fillPlaylistWidget(muk.cs.playlist) # TODO not every tick...
 
@@ -563,8 +589,11 @@ proc main(): int =
           muk.tb.render(muk.txtSearch)
         if muk.debugInfo:
           muk.tb.render(muk.infLog)
-        muk.tb.render(muk.chkRepeat)
-        muk.tb.render(muk.chkNext)
+
+        muk.tb.render(muk.radGroupRep)
+        muk.tb.write(24, terminalHeight() - 3, "|")
+        # muk.tb.render(muk.chkRepeat)
+        # muk.tb.render(muk.chkNext)
         muk.tb.display()
       except:
         echo "COULD NOT RENDER"

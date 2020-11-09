@@ -173,6 +173,10 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
     await mukd.fanout(fan)
 
   tryIgnore:
+    fan = mukd.getFanout_MUTE()
+    await mukd.fanout(fan)
+
+  tryIgnore:
     fan = mukd.getFanout_PLAYLIST()
     await mukd.fanout(fan)
 

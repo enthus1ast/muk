@@ -8,6 +8,7 @@ type
     metadata*: Fanout_METADATA
     pause*: Fanout_PAUSE
     volume*: Fanout_VOLUME
+    mute*: Fanout_MUTE
     playlist*: Fanout_PLAYLIST
   Mukc* = ref object
     control*: Client
@@ -174,6 +175,7 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
     of FanoutDataKind.PROGRESS: cs.progress = fan.data.to(Fanout_PROGRESS)
     of FanoutDataKind.PAUSE: cs.pause = fan.data.to(Fanout_PAUSE)
     of FanoutDataKind.VOLUME: cs.volume = fan.data.to(Fanout_VOLUME)
+    of FanoutDataKind.MUTE: cs.mute = fan.data.to(Fanout_MUTE)
     of FanoutDataKind.PLAYLIST: cs.playlist = fan.data.to(Fanout_PLAYLIST)
     else:
       discard
