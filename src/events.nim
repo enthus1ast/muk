@@ -45,3 +45,5 @@ type
     MukSearchOpen
     MukSearchCancel
     MukSearchDone
+
+    MukCycleRepeat

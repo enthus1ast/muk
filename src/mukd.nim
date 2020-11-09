@@ -10,7 +10,7 @@ import templates
 import parsecfg
 import filesys
 
-import tsonginfo
+import tsonginfo, trepeatKind
 import tmukd
 
 const
@@ -55,6 +55,11 @@ proc getFanout_PLAYLIST(mukd: Mukd): Message_Server_FANOUT =
   result.dataKind = FanoutDataKind.PLAYLIST
   result.data = %* mukd.ctx.getPlaylist().Fanout_PLAYLIST
 
+proc getFanout_REPEATKIND(mukd: Mukd): Message_Server_FANOUT =
+  result = newMsg(Message_Server_FANOUT)
+  result.dataKind = FanoutDataKind.REPEATKIND
+  result.data = %* mukd.repeatKind
+
 # -----------------------------------------------------------------------
 proc getControl_FSLS(mukd: Mukd): Message_Server_CONTROL =
   result = newMsg Message_Server_CONTROL
@@ -70,7 +75,17 @@ proc getControl_ACTION(mukd: Mukd): Message_Server_CONTROL =
   result.controlKind = FSACTION
   result.data = %* nil
 
-
+proc setRepeatKind(mukd: Mukd, repeatKind: RepeatKind) =
+  case repeatKind
+  of RepeatKind.None:
+    mukd.ctx.loopFile(false)
+    mukd.ctx.loopPlaylist(false)
+  of RepeatKind.Song:
+    mukd.ctx.loopFile(true)
+    mukd.ctx.loopPlaylist(false)
+  of RepeatKind.List:
+    mukd.ctx.loopFile(false)
+    mukd.ctx.loopPlaylist(true)
 
 #########################################################################
 
@@ -180,6 +195,10 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
     fan = mukd.getFanout_PLAYLIST()
     await mukd.fanout(fan)
 
+  tryIgnore:
+    fan = mukd.getFanout_REPEATKIND()
+    await mukd.fanout(fan)
+
 
 
 #  tryIgnore:
@@ -269,8 +288,11 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.clearPlaylist()
       var fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
-
-
+    of CYCLEREPEAT:
+      mukd.repeatKind = mukd.repeatKind.cycleRepeatKind()
+      mukd.setRepeatKind(mukd.repeatKind)
+      var fan = mukd.getFanout_REPEATKIND()
+      await mukd.fanout(fan)
     of FSLS:
       var answer = mukd.getControl_FSLS()
       await client.send(answer)
@@ -363,7 +385,8 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
       elif mpvevent == "metadata-update":
         var fan = mukd.getFanout_METADATA()
         await mukd.fanout fan
-        mukd.callForSong(mukd.ctx.getMetadata().normalizeMetadata())
+        if mukd.config.getSectionValue("", "callForSongEnable").parseBool():
+          mukd.callForSong(mukd.ctx.getMetadata().normalizeMetadata())
       elif mpvevent == "tracks-changed":
         var fan = mukd.getFanout_PLAYLIST()
         await mukd.fanout fan

@@ -1,6 +1,7 @@
 from json import JsonNode
 import tsonginfo
 import tplaylist
+import trepeatKind
 type
   SocketPurpose* {.pure.} = enum
     Unknown
@@ -37,6 +38,7 @@ type
     PREVSONG,
     REMOVESONG,
     CLEARPLAYLIST,
+    CYCLEREPEAT,
 
     FSLS,
     FSACTION,
@@ -83,7 +85,9 @@ type
     MUTE,
     PAUSE,
     VOLUME,
-    PLAYLIST
+    PLAYLIST,
+    REPEATKIND
+  Fanout_REPEATKIND* = RepeatKind
   Fanout_PROGRESS* = object
     percent*: float
     timePos*: float

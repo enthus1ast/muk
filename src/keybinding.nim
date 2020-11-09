@@ -49,6 +49,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.Three] = MukToMusicDir3
   result[Key.Four] = MukToMusicDir4
 
+  result[Key.R] = MukCycleRepeat
 
   result[Key.Q] = MukQuitGui
   result[Key.ShiftQ] = MukQuitAll

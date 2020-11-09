@@ -23,6 +23,7 @@ import network, messages
 import times
 # import search
 import tplaylist
+import trepeatKind
 
 import keybinding, events
 
@@ -130,9 +131,6 @@ proc newMuk(): Muk =
   result.radRepList.textUnchecked = "( )"
 
 
-
-
-
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
   result.infLog.wrapMode = WrapMode.Char
 
@@ -229,8 +227,6 @@ proc getProgressInPercent(muk: Muk): float =
   result = 0.0
   tryIgnore: result = muk.cs.progress.percent.clamp(0.0, 100.0)
 
-
-
 proc doColorSchema(tb: var TerminalBuffer) =
   tb.setBackgroundColor(bgBlack)
   tb.setForegroundColor(fgGreen)
@@ -265,7 +261,6 @@ proc fillFilesystem(filesystem: var ChooseBox, elems: seq[string]) =
   filesystem.elements.setLen(0)
   for elem in elems:
     filesystem.elements.add elem
-# proc addSelectedItemToPlaylist
 
 proc filesystemOpenDir(muk: Muk, dir: string) =
   ## Points the filesystem to the given `dir`
@@ -417,6 +412,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukVideoToggle:
     # muk.ctx.command(@["cycle", "video"])
     discard # TODO
+  of MukCycleRepeat:
+    asyncCheck muk.mukc.cylceRepeat()
+    discard
   of MukSelectCurrentSongPlaylist:
     muk.playlist.choosenIdx = muk.playlist.highlightIdx
   else:
@@ -573,6 +571,17 @@ proc main(): int =
       muk.progVolume.text = $muk.cs.volume & "%"
 
     muk.playlist.fillPlaylistWidget(muk.cs.playlist) # TODO not every tick...
+
+    # The repeat radio buttons
+    muk.radGroupRep.uncheckAll()
+    case muk.cs.repeatKind
+    of RepeatKind.None:
+      muk.radRepNone.checked = true
+    of RepeatKind.Song:
+      muk.radRepSong.checked = true
+    of RepeatKind.List:
+      muk.radRepList.checked = true
+
 
     doRender.inc
     if doRender >= 0: # test if less rendering is also still good

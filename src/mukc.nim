@@ -1,5 +1,5 @@
 import messages, network, dbg, asyncnet, json
-import tsonginfo, tplaylist
+import tsonginfo, tplaylist, trepeatKind
 
 type
   # ChangeCb = proc ()
@@ -10,6 +10,7 @@ type
     volume*: Fanout_VOLUME
     mute*: Fanout_MUTE
     playlist*: Fanout_PLAYLIST
+    repeatKind*: RepeatKind
   Mukc* = ref object
     control*: Client
     listening*: Client
@@ -100,6 +101,14 @@ proc clearPlaylist*(mukc: Mukc) {.async.} =
   msg.controlKind = Control_Kind.CLEARPLAYLIST
   msg.data = %* nil
   await mukc.control.send(msg)
+
+proc cylceRepeat*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.CYCLEREPEAT
+  msg.data = %* nil
+  await mukc.control.send(msg)
+
+
 ########################################################
 
 proc newMukc*(): Mukc =
@@ -177,6 +186,8 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
     of FanoutDataKind.VOLUME: cs.volume = fan.data.to(Fanout_VOLUME)
     of FanoutDataKind.MUTE: cs.mute = fan.data.to(Fanout_MUTE)
     of FanoutDataKind.PLAYLIST: cs.playlist = fan.data.to(Fanout_PLAYLIST)
+    of FanoutDataKind.REPEATKIND: cs.repeatKind = fan.data.to(Fanout_REPEATKIND)
+
     else:
       discard
   except:
