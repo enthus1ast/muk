@@ -450,7 +450,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   #   discard # TODO
 
 
-
 proc handleMouse(muk: Muk, key: Key) =
   let coords = getMouse()
   var ev: Events
@@ -501,12 +500,12 @@ proc renderCurrentSongInfo(muk: Muk): string =
   result &= muk.cs.metadata.title & " | "
   result &= muk.cs.metadata.path
 
-proc main(): int =
+import uri
+proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "baa"): int =
+  let url = parseUri(host)
   var muk = newMuk()
-  if waitFor muk.mukc.connect("127.0.0.1", 8889.Port):
-  # if waitFor muk.mukc.connect("192.168.1.107", 8889.Port):
-  # if waitFor muk.mukc.connect("192.168.2.204", 8889.Port):
-    if waitFor muk.mukc.authenticate("foo", "baa"):
+  if waitFor muk.mukc.connect(url.hostname, url.port.parseInt().Port):
+    if waitFor muk.mukc.authenticate(username, password):
       asyncCheck muk.mukc.collectFanouts(muk.cs)
 
   # muk.banner()
@@ -626,4 +625,7 @@ proc main(): int =
     poll(35)
   return 0
 
+when isMainModule:
+  import cligen
+  dispatch(main)
 system.quit(main())
