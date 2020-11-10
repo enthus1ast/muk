@@ -50,3 +50,5 @@ type
 
     MukFilesystemLocal
     MukFilesystemRemote
+
+    MukAction

@@ -438,23 +438,17 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.filesystemKind = FilesystemKind.Remote
   of MukSelectCurrentSongPlaylist:
     muk.playlist.choosenIdx = muk.playlist.highlightIdx
+  of MukAction:
+    muk.openAction()
   else:
     discard
 
-  ## TODO
-  if key == Key.T:
-    # tryLog muk.log(muk.ctx.get_property("filtered-metadata"))
-    # tryLog muk.log(muk.ctx.get_property("metadata"))
-    discard # TODO
-  if key == Key.Space:
-    # muk.ctx.command("loadfile", """C:\Users\david\ttt.mp4""")
-    # muk.ctx.command(@["playlist-play-index", "0"])
-    # discard muk.ctx.togglePause() # TODO
-    # muk.ctx.loadfile(playlist.currentSong())
-    discard
+  # ## TODO
+  # if key == Key.T:
+  #   # tryLog muk.log(muk.ctx.get_property("filtered-metadata"))
+  #   # tryLog muk.log(muk.ctx.get_property("metadata"))
+  #   discard # TODO
 
-  if key == Key.Enter:
-    muk.openAction()
 
 
 proc handleMouse(muk: Muk, key: Key) =

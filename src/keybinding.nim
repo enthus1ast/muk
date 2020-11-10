@@ -21,6 +21,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.LeftBracket] = MukSeekBackwardFast
 
   result[Key.P] = MukPauseToggle
+  result[Key.Space] = MukPauseToggle
 
   result[Key.Tab] = MukSwitchPane
 
@@ -58,6 +59,8 @@ proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.Q] = MukQuitGui
   result[Key.ShiftQ] = MukQuitAll
 
+  result[Key.Enter] = MukAction
+
 
 
 proc defaultKeybindingPlaylist*(): Keybinding =
@@ -83,7 +86,6 @@ proc defaultKeybindingFilesystem*(): Keybinding =
   result[Key.G] = MukSearchOpen
   result[Key.Slash] = MukSearchOpen
   result[Key.A] = MukAddStuff
-  # result[Key.Enter] = MukAddStuff
 
 proc defaultKeybindingSearch*(): Keybinding =
   result[Key.Escape] = MukSearchCancel
