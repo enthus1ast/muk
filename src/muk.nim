@@ -109,13 +109,18 @@ proc newMuk(): Muk =
   result.filesystem = newChooseBox(@[], 1, 1, (terminalWidth() div 2) - 2, terminalHeight() - 5, color = fgGreen )
   result.playlist = newChooseBox(@[],  terminalWidth() div 2, 1, terminalWidth() div 2, terminalHeight() - 5 , color = fgGreen)
   result.infSongPath = newInfoBox("", 0, terminalHeight() - 2, terminalWidth(), 1)
+
   result.progSongProgress = newProgressBar("", 2, terminalHeight() - 1, terminalWidth() - 2, 0.0, 100.0, bgTodo = bgBlack)
   result.progSongProgress.color = fgWhite
   result.progSongProgress.colorText = fgYellow
+  result.progSongProgress.colorTextDone = fgBlack
+
   result.btnPlayPause = newButton(">", 0, terminalHeight() - 1, 2, 1, false)
   result.txtSearch = newTextBox("", 0, 0, 0, color = fgWhite, bgcolor = bgCyan)
-  result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 130.0)
 
+  result.progVolume = newProgressBar("", 0, 0, value = 0.0, maxValue = 130.0)
+  result.progVolume.colorText = fgYellow
+  result.progVolume.colorTextDone = fgBlack
 
   result.radRepNone = newRadioBox("NONE", 5, 5)
   result.radRepNone.color = fgWhite

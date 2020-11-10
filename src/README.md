@@ -35,6 +35,8 @@ Keyboard Binding
 | BOTH | {g}/{/}| Search |
 | BOTH | {?}/{F1} | Help |
 | BOTH | ~~{ESC}~~ | Exit out of search/help/lyrics etc. |
+| BOTH | left Mouse| highlight, seek, etc. |
+| BOTH | right Mouse| activate (play/add,etc) |
 | Filesystem | {ShiftG} | Search recursive |
 | Filesystem | {:}/{Backspace} | One folder up |
 | Filesystem | {a} | Add song/directory to playlist |
