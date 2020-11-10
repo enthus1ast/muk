@@ -172,7 +172,7 @@ proc layout(muk: Muk) =
 
   muk.playlist.x = (terminalWidth() div 2) - 1
   muk.playlist.y = 0
-  muk.playlist.w = terminalWidth() div 2
+  muk.playlist.w = (terminalWidth() - muk.filesystem.w) - 2
   muk.playlist.h = terminalHeight() - 4
 
   muk.radRepNone.x = 0
@@ -327,8 +327,10 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   muk.log($mev)
 
   case mev
-  of MukQuitAll, MukQuitGui:
+  of MukQuitGui:
     muk.quitGui()
+  of MukQuitAll:
+    asyncCheck muk.mukc.quitServer()
   of MukPauseToggle:
     discard muk.mukc.togglePause()
   of MukSeekForward:

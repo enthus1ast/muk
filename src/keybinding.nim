@@ -18,6 +18,8 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.ShiftL] = MukSeekForwardFast
   result[Key.ShiftH] = MukSeekBackwardFast
+  result[Key.RightBracket] = MukSeekForwardFast
+  result[Key.LeftBracket] = MukSeekBackwardFast
 
   result[Key.P] = MukPauseToggle
 

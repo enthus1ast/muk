@@ -108,6 +108,11 @@ proc cylceRepeat*(mukc: Mukc) {.async.} =
   msg.data = %* nil
   await mukc.control.send(msg)
 
+proc quitServer*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.QUIT
+  msg.data = %* nil
+  await mukc.control.send(msg)
 
 ########################################################
 

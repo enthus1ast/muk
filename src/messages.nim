@@ -40,11 +40,11 @@ type
     CLEARPLAYLIST,
     CYCLEREPEAT,
     SETREPEAT,
-
     FSLS,
     FSACTION,
     FSUP,
     # FSCD,
+    QUIT
 
   Control_Client_FSLS* = string
   Control_Client_FSACTION* = string
