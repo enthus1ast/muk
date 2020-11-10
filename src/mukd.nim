@@ -1,5 +1,5 @@
 ## This is the muk server part.
-import net, asyncnet, asyncdispatch, json, strutils, os
+import net, asyncnet, asyncdispatch, json, strutils, os, tables
 import dbg
 import mpv
 import sets
@@ -98,6 +98,12 @@ proc newMukd(): Mukd =
   result.config = loadConfig(getAppDir() / "mukd.ini")
   result.fs = newFilesystem()
 
+proc setMpvOptions(mukd: Mukd) =
+  echo "Forwarding mpv settings:"
+  for key, val in mukd.config["mpv"]:
+    echo "set: ", key, " = ", val
+    mukd.ctx.set_option(key, val)
+
 proc initMpv(mukd: Mukd) =
   mukd.ctx = mpv.create()
   if mukd.ctx.isNil:
@@ -106,13 +112,7 @@ proc initMpv(mukd: Mukd) =
   # defer: mpv.terminate_destroy(mukd.ctx) # must be in muk destructor
   mukd.ctx.set_option("terminal", "no")
   mukd.ctx.set_option("video", "no")
-  if mukd.config.getSectionValue("video", "videoFullscreen").parseBool():
-    mukd.ctx.set_option("fullscreen", "yes")
-  if mukd.config.getSectionValue("video", "videoOntop").parseBool():
-    mukd.ctx.set_option("ontop", "yes")
-  mukd.ctx.set_option("input-default-bindings", "yes")
-  mukd.ctx.set_option("input-vo-keyboard", "no")
-  mukd.ctx.set_option("osc", true)
+  mukd.setMpvOptions()
   check_error mukd.ctx.initialize()
 
 proc authGood*(mukd: Mukd, username, password: string): bool =
