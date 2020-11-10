@@ -296,9 +296,7 @@ proc openAction(muk: Muk) =
     muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
     case act.kind
     of ActionKind.File:
-      # muk.mukc
-      # muk.ctx.addToPlaylistAndPlay(muk.fs.currentPath / muk.filesystem.element())
-      discard # TODO
+      asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
     of ActionKind.Folder:
       muk.filesystem.choosenidx = 0
       muk.filesystemOpenDir(act.folderPath)
@@ -431,8 +429,7 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.txtSearch.caretIdx = 0 # TODO bug in illwillWidgets
     muk.filesystem.filter = ""
   of MukVideoToggle:
-    # muk.ctx.command(@["cycle", "video"])
-    discard # TODO
+    asyncCheck muk.mukc.toggleVideo()
   of MukCycleRepeat:
     asyncCheck muk.mukc.cylceRepeat()
   of MukFilesystemLocal:

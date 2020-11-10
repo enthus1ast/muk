@@ -106,6 +106,10 @@ proc initMpv(mukd: Mukd) =
   # defer: mpv.terminate_destroy(mukd.ctx) # must be in muk destructor
   mukd.ctx.set_option("terminal", "no")
   mukd.ctx.set_option("video", "no")
+  if mukd.config.getSectionValue("video", "videoFullscreen").parseBool():
+    mukd.ctx.set_option("fullscreen", "yes")
+  if mukd.config.getSectionValue("video", "videoOntop").parseBool():
+    mukd.ctx.set_option("ontop", "yes")
   mukd.ctx.set_option("input-default-bindings", "yes")
   mukd.ctx.set_option("input-vo-keyboard", "no")
   mukd.ctx.set_option("osc", true)
@@ -301,7 +305,9 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
     of QUIT:
       if mukd.config.getSectionValue("", "clientCanQuitServer").parseBool():
         quit()
-
+    of TOGGLEVIDEO:
+      if mukd.config.getSectionValue("video", "videoEnabled").parseBool():
+        mukd.ctx.toggleVideo()
     of FSLS:
       var answer = mukd.getControl_FSLS()
       await client.send(answer)

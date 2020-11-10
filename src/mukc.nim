@@ -114,6 +114,12 @@ proc quitServer*(mukc: Mukc) {.async.} =
   msg.data = %* nil
   await mukc.control.send(msg)
 
+proc toggleVideo*(mukc: Mukc) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.TOGGLEVIDEO
+  msg.data = %* nil
+  await mukc.control.send(msg)
+
 ########################################################
 
 proc newMukc*(): Mukc =

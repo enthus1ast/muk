@@ -131,4 +131,7 @@ proc loopPlaylist*(ctx: ptr handle, enabled: bool) =
     param = "inf"
   else:
     param = "no"
-  tryIgnore: ctx.set_property("loop-playlist", $param)
+  tryIgnore: ctx.set_property("loop-playlistT", $param)
+
+proc toggleVideo*(ctx: ptr handle) =
+  tryIgnore ctx.command(@["cycle", "video"])

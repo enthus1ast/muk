@@ -12,7 +12,6 @@ type
 proc defaultKeybindingGlobal*(): Keybinding =
   result[Key.Right] = MukSeekForward
   result[Key.L] = MukSeekForward
-
   result[Key.Left] = MukSeekBackward
   result[Key.H] = MukSeekBackward
 
@@ -29,7 +28,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.ShiftK] = MukPrevFromPlaylist
   result[Key.ShiftJ] = MukNextFromPlaylist
-  result[Key.C] = MukClearPlaylist
+  result[Key.ShiftC] = MukClearPlaylist
 
   result[Key.S] = MukShuffle
   result[Key.ShiftS] = MukUnShuffle
@@ -81,10 +80,10 @@ proc defaultKeybindingFilesystem*(): Keybinding =
   result[Key.Up] = MukUpFilesystem
   result[Key.PageUp] = MukUpFastFilesystem
   result[Key.PageDown] = MukDownFastFilesystem
-  result[Key.A] = MukAddStuff
   result[Key.G] = MukSearchOpen
   result[Key.Slash] = MukSearchOpen
-
+  result[Key.A] = MukAddStuff
+  # result[Key.Enter] = MukAddStuff
 
 proc defaultKeybindingSearch*(): Keybinding =
   result[Key.Escape] = MukSearchCancel

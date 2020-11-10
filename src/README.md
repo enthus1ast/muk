@@ -1,15 +1,15 @@
 MUK
 ====
 
-Prototype (!!!) of a crossplattform terminal music player.
+Prototype (!!!) of a crossplattform terminal music and video player.
 Inspired by moc and mpd.
 
 Uses the mighty `mpv` as audio backend.
 
 'mukke' is a german slang for music.
 
-Warning, this is not "production grade", only use the
-network enabled muk/mukd only in trusted networks.
+Warning, this is not "production grade", use the
+network enabled muk/mukd in trusted networks only!
 
 Keyboard Binding
 ----------------
@@ -30,13 +30,13 @@ Keyboard Binding
 | BOTH | {p} | Pause/Resum |
 | BOTH | {r} | Cycle Repeat Modes |
 | BOTH | {v} | ~Show/Hide video~ |
-| BOTH | {c} | Clear the playlist |
+| BOTH | {ShiftC} | Clear the playlist |
 | BOTH | {i} | Open debug log / song information |
 | BOTH | {,} | Local Filesystem|
 | BOTH | {.} | Remote Filesystem|
 | BOTH | {g}/{/}| Search |
 | BOTH | {?}/{F1} | Help |
-| BOTH | ~~{ESC}~~ | Exit out of search/help/lyrics etc. |
+| BOTH | {ESC} | Exit out of search/help/lyrics etc. |
 | BOTH | left Mouse| highlight, seek, etc. |
 | BOTH | right Mouse| activate (play/add,etc) |
 | BOTH | {q} | quit muk (the gui) |
@@ -57,7 +57,7 @@ Features
   - [x] standalone gui
   - [x] standalone audio backend
   - [x] network code
-    - [/] Username/Password aut (protocol supports it, credentials are hardcoded atm)
+    - [ ] Username/Password auth (protocol supports it, credentials are hardcoded atm)
     - [ ] secure networking
       - [ ] Encryption
       - [ ] Secure login
@@ -74,7 +74,8 @@ Features
 - [x] mouse support
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
 - [x] custom keybindings (requires recompilation ATM)
-- [ ] custom colorscheme
+- [ ] custom colorscheme (low priority)
+- [ ] Playlist support
 
 Network Protocol
 ----------------

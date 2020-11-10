@@ -44,7 +44,8 @@ type
     FSACTION,
     FSUP,
     # FSCD,
-    QUIT
+    QUIT,
+    TOGGLEVIDEO
 
   Control_Client_FSLS* = string
   Control_Client_FSACTION* = string
