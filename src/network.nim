@@ -21,7 +21,6 @@ proc kill*(client: Client) =
       discard
   raise newException(ClientDisconnected, client.address)
 
-
 proc hash*(client: Client): Hash =
   result = 0
   result = result !& client.address.hash()
@@ -33,22 +32,6 @@ proc newClient*(address: string, socket: AsyncSocket): Client =
   # result.peerAddr = socket.getPeerAddr() # need this for hashing, socket could be gone when we want to remove
   result.localAddr = socket.getLocalAddr() # need this for hashing, socket could be gone when we want to remove
 
-## Bug https://github.com/nim-lang/Nim/issues/15861
-# proc fillData*[T](msgControl: Message_Client_CONTROL, data: T): Message_Client_CONTROL =
-#   result = msgControl
-#   # result.data = %* data
-#   echo data.type
-#   var controlKind = ($type(data)).split("_")[^1]
-#   echo controlKind
-#   result.controlKind = parseEnum[ControlKind](controlKind)
-
-# proc newMsg*[T](msg: typedesc[T] | T): var T =
-#   const kindName = ($T).split("_")[^1]
-#   when msg.type == typedesc[T]:
-#     result = T()
-#   else:
-#     result = msg
-#   result.kind = parseEnum[MessageTypes](kindName)
 
 proc newMsg*[T](msg: typedesc[T]): T =
   const kindName = ($T).split("_")[^1]
@@ -90,7 +73,6 @@ proc recv*[T](client: Client, kind: typedesc[T]): Future[T] {.async.} =
     echo js
     client.kill()
     raise newException(ClientDisconnected, client.address)
-
 
   const kindName = ($kind).split("_")[^1]
 
