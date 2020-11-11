@@ -264,7 +264,7 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
 
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
-    asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
+    waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
     discard # TODO
   elif muk.inWidget == InWidget.Filesystem:
@@ -274,7 +274,7 @@ proc openAction(muk: Muk) =
       muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
       case act.kind
       of ActionKind.File:
-        asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+        waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
       of ActionKind.Folder:
         muk.filesystem.choosenidx = 0
         muk.filesystemOpenDir(act.folderPath)
@@ -287,7 +287,7 @@ proc openAction(muk: Muk) =
       muk.infSongPath.text = muk.fsRemote.currentPath & "|" & $act #fs # filesystem.element()
       case act.kind
       of ActionKind.File:
-        asyncCheck muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
+        waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
       of ActionKind.Folder:
         muk.filesystem.choosenidx = 0
         muk.filesystemOpenDir(act.folderPath)
@@ -323,17 +323,17 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukQuitGui:
     muk.quitGui()
   of MukQuitAll:
-    asyncCheck muk.mukc.quitServer()
+    waitFor muk.mukc.quitServer()
   of MukPauseToggle:
     discard muk.mukc.togglePause()
   of MukSeekForward:
-    asyncCheck muk.mukc.setSeekRelative(3)
+    waitFor muk.mukc.setSeekRelative(3)
   of MukSeekBackward:
-    asyncCheck muk.mukc.setSeekRelative(-3)
+    waitFor muk.mukc.setSeekRelative(-3)
   of MukSeekForwardFast:
-    asyncCheck muk.mukc.setSeekRelative(15)
+    waitFor muk.mukc.setSeekRelative(15)
   of MukSeekBackwardFast:
-    asyncCheck muk.mukc.setSeekRelative(-15)
+    waitFor muk.mukc.setSeekRelative(-15)
   of MukSwitchPane:
     case muk.inWidget
     of InWidget.Playlist:
@@ -345,11 +345,11 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukDebugInfo:
     muk.debugInfo = not muk.debugInfo
   of MukPrevFromPlaylist:
-    asyncCheck muk.mukc.prevFromPlaylist()
+    waitFor muk.mukc.prevFromPlaylist()
   of MukNextFromPlaylist:
-    asyncCheck muk.mukc.nextFromPlaylist()
+    waitFor muk.mukc.nextFromPlaylist()
   of MukClearPlaylist:
-    asyncCheck muk.mukc.clearPlaylist()
+    waitFor muk.mukc.clearPlaylist()
   of MukDownPlaylist:
     muk.playlist.nextChoosenidx()
   of MukUpPlaylist:
@@ -386,7 +386,7 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     # muk.ctx.command("playlist-unshuffle")
     discard # TODO
   of MukRemoveSong:
-    asyncCheck muk.mukc.removeSong(muk.playlist.choosenIdx)
+    waitFor muk.mukc.removeSong(muk.playlist.choosenIdx)
   of MukDirUp:
     case muk.filesystemKind
     of FilesystemKind.Local:
@@ -400,17 +400,17 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukAddStuff:
     case muk.filesystemKind
     of FilesystemKind.Local:
-      asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+      waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
     of FilesystemKind.Remote:
-      asyncCheck muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
+      waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()
     discard # TODO
   of MukVolumeUp:
-    asyncCheck muk.mukc.setVolumeRelative(5)
+    waitFor muk.mukc.setVolumeRelative(5)
   of MukVolumeDown:
-    asyncCheck muk.mukc.setVolumeRelative(-5)
+    waitFor muk.mukc.setVolumeRelative(-5)
   of MukMuteToggle:
-    asyncCheck muk.mukc.toggleMute()
+    waitFor muk.mukc.toggleMute()
   of MukSearchOpen:
     muk.inWidget = InWidget.Search
     muk.txtSearch.focus = true
@@ -430,9 +430,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.txtSearch.caretIdx = 0 # TODO bug in illwillWidgets
     muk.filesystem.filter = ""
   of MukVideoToggle:
-    asyncCheck muk.mukc.toggleVideo()
+    waitFor muk.mukc.toggleVideo()
   of MukCycleRepeat:
-    asyncCheck muk.mukc.cylceRepeat()
+    waitFor muk.mukc.cylceRepeat()
 
   of MukFilesystemLocal:
     muk.filesystemKind = FilesystemKind.Local
@@ -460,12 +460,12 @@ proc handleMouse(muk: Muk, key: Key) =
   ## Seek in song
   ev = muk.tb.dispatch(muk.progSongProgress, coords)
   if ev.contains MouseDown:
-    asyncCheck muk.mukc.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
+    waitFor muk.mukc.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
 
   ## Click on pause
   ev = muk.tb.dispatch(muk.btnPlayPause, coords)
   if ev.contains MouseDown:
-    asyncCheck muk.mukc.togglePause()
+    waitFor muk.mukc.togglePause()
 
   ## Add filesystem file to playlist
   ev = muk.tb.dispatch(muk.filesystem, coords)
@@ -482,7 +482,7 @@ proc handleMouse(muk: Muk, key: Key) =
   if (ev.contains MouseDown) and (coords.button == mbRight):
     muk.inWidget = InWidget.Playlist
     muk.log(muk.playlist.element())
-    asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
+    waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
 
   ## Search
