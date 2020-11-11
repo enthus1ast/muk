@@ -2,7 +2,6 @@ import messages, network, dbg, asyncnet, json
 import tsonginfo, tplaylist, trepeatKind
 
 type
-  # ChangeCb = proc ()
   ClientStatus* = ref object
     progress*: Fanout_PROGRESS
     metadata*: Fanout_METADATA
@@ -22,7 +21,6 @@ proc setProgressInPercent*(mukc: Mukc, progress: float) {.async.} =
   var data: Control_Client_PERCENTPOS = progress
   msg.controlKind = PERCENTPOS
   msg.data = %* data
-  # msg = msg.fillData(data) # BUG https://github.com/nim-lang/Nim/issues/15861
   await mukc.control.send(msg)
 
 proc setSeekRelative*(mukc: Mukc, seek: float) {.async.} =
@@ -30,7 +28,6 @@ proc setSeekRelative*(mukc: Mukc, seek: float) {.async.} =
   var data: Control_Client_SEEKRELATIVE = seek
   msg.controlKind = SEEKRELATIVE
   msg.data = %* data
-  # msg = msg.fillData(data) # BUG https://github.com/nim-lang/Nim/issues/15861
   await mukc.control.send(msg)
 
 proc setPause*(mukc: Mukc, pause: bool) {.async.} =
@@ -39,11 +36,9 @@ proc setPause*(mukc: Mukc, pause: bool) {.async.} =
   msg.controlKind = Control_Kind.PAUSE
   msg.data = %* data
   await mukc.control.send(msg)
-  # await mukc.control.send(msg.fillData(data)) # BUG https://github.com/nim-lang/Nim/issues/15861
 
 proc togglePause*(mukc: Mukc) {.async.} =
   var msg = newMsg Message_Client_CONTROL
-  # var data: Control_Client_TOGGLEPAUSE = nil
   msg.controlKind = Control_Kind.TOGGLEPAUSE
   msg.data = %* nil
   await mukc.control.send(msg)
@@ -137,12 +132,9 @@ proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
   except:
     dbg "Could not connect to host: " & host & ":" & $port
     dbg getCurrentExceptionMsg()
-    # if not mukc.control.socket.isClosed: mukc.control.socket.close()
-    # if not mukc.listening.socket.isClosed: mukc.listening.socket.close()
     return false
 
 proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async.} =
-  # let msg = newMsg(Message_Client_Auth(username: username, password: password))
   var msg = newMsg(Message_Client_Auth)
   msg.username = username
   msg.password = password
@@ -170,21 +162,12 @@ proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async
     dbg "Could not authenticate"
     return false
 
-# proc recvFanout(mukc: Mukc): Future[JsonNode] {.async.} =
 proc recvFanout(mukc: Mukc) {.async.} =
   var st = 0
   while true:
-    # let line = await mukc.listening.socket.recvLine()
-    # echo "l: ", line
-    # let js = parseJson(line)
-    # echo "j: ", js
-    # echo "FANOUT:", parseJson(await mukc.listening.socket.recvLine())
     let msg = await mukc.listening.recv(Message_Server_Fanout)
     when isMainModule:
       echo msg
-    # st.inc 4500
-    # echo st
-    # await sleepAsync st
     await mukc.listening.sendGood()
 
 proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
@@ -198,14 +181,11 @@ proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
     of FanoutDataKind.MUTE: cs.mute = fan.data.to(Fanout_MUTE)
     of FanoutDataKind.PLAYLIST: cs.playlist = fan.data.to(Fanout_PLAYLIST)
     of FanoutDataKind.REPEATKIND: cs.repeatKind = fan.data.to(Fanout_REPEATKIND)
-
     else:
       discard
   except:
     discard
-  # echo repr cs
 
-# proc collectFanouts(mukc: Mukc, cs: ClientStatus, changeCb: ChangeCb) {.async.} =
 proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
   ## This updates the ClientStatus with updates from the server.
   ## The client status is rendered by the `muk` terminal music player.
@@ -216,16 +196,10 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
-
-
 when isMainModule:
   import cligen
-
-  # proc dumpListening():
-
   var mukc = newMukc()
   var cs = ClientStatus()
   if waitFor mukc.connect("127.0.0.1", 8889.Port):
     if waitFor mukc.authenticate("foo", "baa"):
       waitFor mukc.collectFanouts(cs)
-      # waitFor mukc.recvFanout()

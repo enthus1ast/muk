@@ -283,6 +283,8 @@ proc quitGui(muk: Muk) =
 
 proc handleKeyboard(muk: Muk, key: var Key) =
   var mev: MukEvent
+
+  # Keybinding for each gui section
   case muk.inWidget
   of InWidget.Playlist:
     mev = muk.keybindingPlaylist.toMukEvent(key)
@@ -293,6 +295,7 @@ proc handleKeyboard(muk: Muk, key: var Key) =
 
   muk.log($mev)
 
+  # Handle all gui events
   case mev
   of MukQuitGui:
     muk.quitGui()
