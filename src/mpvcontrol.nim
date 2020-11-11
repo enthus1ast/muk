@@ -73,8 +73,10 @@ proc addToPlaylistAndPlay*(ctx: ptr handle, file: string) =
 
 proc playlistPlayIndex*(ctx: ptr handle, index: int) =
   ## TODO we send both for newer and older mpv's ... test if this is an issue..
-  tryIgnore ctx.command(@["playlist-play-index", $index]) # for newer mpv versions
-  tryIgnore ctx.command(@["playlist-pos", $index]) # for older mpv versions
+  tryIgnore ctx.command(@["playlist-play-index", $index]) # for newer mpv versions ?
+  tryIgnore ctx.command(@["playlist-pos", $index]) # for older mpv versions ??
+  tryIgnore ctx.command(@["playlist-start", $index]) # for older mpv versions ???
+
 
 proc nextFromPlaylist*(ctx: ptr handle) =
   tryIgnore ctx.command("playlist-next")
