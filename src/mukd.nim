@@ -139,17 +139,19 @@ proc fanoutOne[T](mukd: Mukd, msg: T, listeningClient: Client) {.async.} =
   try:
     # echo "FANOUT to: ", listeningClient.address
     await listeningClient.send(msg)
-    var answerFuture = listeningClient.recv(Message_GOOD)
-    let inTime = await withTimeout(answerFuture, 5000) ## really discard?
+    var answerFuture = await listeningClient.recv(Message_GOOD)
 
-    if not inTime:
-      dbg "TIMEOUT: Listening client did not answer in time: " & listeningClient.address
-      var error = newMsg(Message_PROTOCOLVIOLATION)
-      error.error = "You did not respond in time, bye bye."
-      try:
-        await listeningClient.send(error)
-      except:
-        discard
+    # var answerFuture = listeningClient.recv(Message_GOOD)
+    # let inTime = await withTimeout(answerFuture, 5000) ## really discard?
+
+    # if not inTime:
+    #   dbg "TIMEOUT: Listening client did not answer in time: " & listeningClient.address
+    #   var error = newMsg(Message_PROTOCOLVIOLATION)
+    #   error.error = "You did not respond in time, bye bye."
+    #   try:
+    #     await listeningClient.send(error)
+    #   except:
+    #     discard
       # listeningClient.kill() # TODO this must work but does not properly...
   except:
     dbg "could not fanout to: ", listeningClient.address
