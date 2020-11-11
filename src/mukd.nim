@@ -150,7 +150,7 @@ proc fanoutOne[T](mukd: Mukd, msg: T, listeningClient: Client) {.async.} =
         await listeningClient.send(error)
       except:
         discard
-      listeningClient.kill()
+      # listeningClient.kill() # TODO this must work but does not properly...
   except:
     dbg "could not fanout to: ", listeningClient.address
     try: # TODO fix this ugly
