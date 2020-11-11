@@ -18,7 +18,6 @@ const
   BIND_ADDR = "0.0.0.0"
 
 
-
 ### High level mpv control #############################################
 
 proc getFanout_PROGRESS(mukd: Mukd): Message_Server_FANOUT =

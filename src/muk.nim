@@ -2,31 +2,18 @@
 # --display-tags  String list (default: Artist,Album,Album_Artist,Comment,Composer,Date,Description,Genre,Performer,Rating,Series,Title,Track,icy-title,service_name)
 var doRender = 0
 var idleSteps = 0
-import os
-import mpv
-import asyncdispatch
-import illwill
-import illwillWidgets
-import strutils
-import sequtils
-import json
-import parsecfg
-import templates
-import mukc
-import tables
-import stack
 
+import os, strutils, sequtils, json, parsecfg, tables, uri, asyncdispatch, times
+import illwill, illwillWidgets
+
+import mpv, templates
+import mukc
 import filesys
 import mpvcontrol
-
 import network, messages
-import times
-# import search
 import tplaylist
 import trepeatKind
-
 import keybinding, events
-
 
 type
   InWidget {.pure.} = enum
@@ -44,7 +31,6 @@ type
     inWidgetStack: Stack[InWidget]
     lastSelectedIdx: Table[string, int]
     filesystemKind: FilesystemKind
-    # currentSongInfo: SongInfo
 
     # Gui widgets
     filesystem: ChooseBox
@@ -54,9 +40,7 @@ type
     progSongProgress: ProgressBar
     btnPlayPause: Button
     txtSearch: TextBox
-
     progVolume: ProgressBar
-
 
     # Repeat modes
     radGroupRep: RadioBoxGroup
@@ -68,7 +52,6 @@ type
     radGroupFilesys: RadioBoxGroup
     radFilesysLocal: Checkbox
     radFilesysRemote: Checkbox
-
 
     # Keybinding
     # TODO maybe do two/three keebindings for Filesystem/Playlist/help etc..
@@ -150,16 +133,13 @@ proc newMuk(): Muk =
   result.radFilesysRemote.textChecked = "(X)"
   result.radFilesysRemote.textUnchecked = "( )"
 
-
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
   result.infLog.wrapMode = WrapMode.Char
 
-  # setControlCHook(exitProc)
   illwillInit(fullScreen = true, mouse = true)
   hideCursor()
 
   result.tb = newTerminalBuffer(terminalWidth(), terminalHeight())
-
   result.keybindingPlaylist = defaultKeybindingPlaylist()
   result.keybindingFilesystem = defaultKeybindingFilesystem()
   result.keybindingSearch = defaultKeybindingSearch()
@@ -214,15 +194,6 @@ proc layout(muk: Muk) =
   muk.progVolume.y = terminalHeight() - 3
   muk.progVolume.l = 10
 
-
-proc foo(muk: Muk) {.async.} =
-  while true:
-    await sleepAsync(5000)
-    muk.tb.clear(" ")
-    muk.tb.display()
-    muk.layout()
-    # echo "foo"
-
 proc banner(muk: Muk) =
   muk.tb.write 10, 3, "                  __    ";
   muk.tb.write 10, 4, ".--------..--.--.|  |--.";
@@ -267,8 +238,6 @@ proc formatDuration(dur: Duration): string =
 proc infoCurrentSongDurationSeconds(muk: Muk): string =
   result = ""
   tryIgnore:
-    # let curPos = initDuration(milliseconds = (parseFloat(muk.ctx.get_property("time-pos")) * 1000.00).int )
-    # let duration = initDuration(milliseconds = (parseFloat(muk.ctx.get_property("duration")) * 1000.00).int )
     let curPos = initDuration(milliseconds = (muk.cs.progress.timePos * 1000.00).int)
     let duration = initDuration(milliseconds = (muk.cs.progress.duration * 1000.00).int)
     result &= $curPos.formatDuration
@@ -363,7 +332,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.playlist.prevChoosenidx(10)
   of MukDownFastPlaylist:
     muk.playlist.nextChoosenidx(10)
-
   of MukDownFilesystem:
     muk.filesystem.nextChoosenidx()
     muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
@@ -385,7 +353,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.filesystemOpenDir(muk.musikDir3)
   of MukToMusicDir4:
     muk.filesystemOpenDir(muk.musikDir4)
-
   of MukShuffle:
     # muk.ctx.command("playlist-shuffle")
     discard # TODO
@@ -443,13 +410,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   else:
     discard
 
-  # ## TODO
-  # if key == Key.T:
-  #   # tryLog muk.log(muk.ctx.get_property("filtered-metadata"))
-  #   # tryLog muk.log(muk.ctx.get_property("metadata"))
-  #   discard # TODO
-
-
 proc handleMouse(muk: Muk, key: Key) =
   let coords = getMouse()
   var ev: Events
@@ -485,10 +445,6 @@ proc handleMouse(muk: Muk, key: Key) =
     asyncCheck muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
     discard # TODO
 
-  # Repeat chkbox
-  # TODO mouse disabled for now, only RPC for cycle RepeatKind (r) atm.
-  # ev = muk.tb.dispatch(muk.radGroupRep, coords)
-
   ## Search
   if muk.inWidget == InWidget.Search:
     ev = muk.tb.dispatch(muk.txtSearch, coords)
@@ -500,19 +456,12 @@ proc renderCurrentSongInfo(muk: Muk): string =
   result &= muk.cs.metadata.title & " | "
   result &= muk.cs.metadata.path
 
-import uri
 proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "baa"): int =
   let url = parseUri(host)
   var muk = newMuk()
   if waitFor muk.mukc.connect(url.hostname, url.port.parseInt().Port):
     if waitFor muk.mukc.authenticate(username, password):
       asyncCheck muk.mukc.collectFanouts(muk.cs)
-
-  # muk.banner()
-  # muk.tb.display()
-  # sleep(1500)
-
-  result = 1
 
   muk.filesystemOpenDir(getCurrentDir().absolutePath())
   muk.layout()
@@ -536,13 +485,6 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
     else:
       muk.handleKeyboard(key)
       idleSteps = 0
-
-    # if idleSteps > 500:
-    #   # "CPU saver" until illwill can do blocking reads
-    #   muk.banner()
-    #   muk.tb.display()
-    #   discard stdin.readLine()
-    #   idleSteps = 0
 
     # Special case for search
     if muk.txtSearch.focus:
@@ -597,7 +539,6 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
     of FilesystemKind.Remote:
       muk.radFilesysRemote.checked = true
 
-
     doRender.inc
     if doRender >= 0: # test if less rendering is also still good
       doRender = 0
@@ -612,18 +553,14 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
           muk.tb.render(muk.txtSearch)
         if muk.debugInfo:
           muk.tb.render(muk.infLog)
-
         muk.tb.render(muk.radGroupRep)
         muk.tb.render(muk.radGroupFilesys)
         muk.tb.write(24, terminalHeight() - 3, "|")
-        # muk.tb.render(muk.chkRepeat)
-        # muk.tb.render(muk.chkNext)
         muk.tb.display()
       except:
         echo "COULD NOT RENDER"
         echo getCurrentExceptionMsg()
     poll(35)
-  return 0
 
 when isMainModule:
   import cligen
