@@ -8,7 +8,7 @@ import illwill, illwillWidgets
 
 import mpv, templates
 import mukc
-import filesys
+import filesys, filesysRemote
 import mpvcontrol
 import network, messages
 import tplaylist
@@ -24,11 +24,12 @@ type
     mukc: Mukc
     cs: ClientStatus
     fs: Filesystem
+    fsRemote: FilesystemRemote
     tb: TerminalBuffer
     config: Config
     debugInfo: bool
     inWidget: InWidget
-    inWidgetStack: Stack[InWidget]
+    # inWidgetStack: Stack[InWidget]
     lastSelectedIdx: Table[string, int]
     filesystemKind: FilesystemKind
 
@@ -86,7 +87,9 @@ proc newMuk(): Muk =
   result.musikDir2 = result.config.getSectionValue("musicDirs", "musicDir2")
   result.musikDir3 = result.config.getSectionValue("musicDirs", "musicDir3")
   result.musikDir4 = result.config.getSectionValue("musicDirs", "musicDir4")
+
   result.fs = newFilesystem()
+  result.fsRemote = newFilesystemRemote(result.mukc)
 
   # TODO The layout IS this values are overwritten done in "layout()"
   result.filesystem = newChooseBox(@[], 1, 1, (terminalWidth() div 2) - 2, terminalHeight() - 5, color = fgGreen )
@@ -252,8 +255,12 @@ proc fillFilesystem(filesystem: var ChooseBox, elems: seq[string]) =
 
 proc filesystemOpenDir(muk: Muk, dir: string) =
   ## Points the filesystem to the given `dir`
-  muk.fs.currentPath = dir
-  muk.filesystem.fillFilesystem(muk.fs.ls)
+  case muk.filesystemKind
+  of FilesystemKind.Local:
+    muk.fs.currentPath = dir
+    muk.filesystem.fillFilesystem(muk.fs.ls)
+  of FilesystemKind.Remote:
+    muk.filesystem.fillFilesystem(muk.fsRemote.ls)
 
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
@@ -261,18 +268,34 @@ proc openAction(muk: Muk) =
     # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
     discard # TODO
   elif muk.inWidget == InWidget.Filesystem:
-    var act = muk.fs.action(muk.filesystem.element())
-    muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
-    case act.kind
-    of ActionKind.File:
-      asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
-    of ActionKind.Folder:
-      muk.filesystem.choosenidx = 0
-      muk.filesystemOpenDir(act.folderPath)
-      muk.filesystem.filter = ""
-      muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
-    else:
-      discard
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      var act = muk.fs.action(muk.filesystem.element())
+      muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
+      case act.kind
+      of ActionKind.File:
+        asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+      of ActionKind.Folder:
+        muk.filesystem.choosenidx = 0
+        muk.filesystemOpenDir(act.folderPath)
+        muk.filesystem.filter = ""
+        muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
+      else:
+        discard
+    of FilesystemKind.Remote:
+      var act = muk.fsRemote.action(muk.filesystem.element())
+      muk.infSongPath.text = muk.fsRemote.currentPath & "|" & $act #fs # filesystem.element()
+      case act.kind
+      of ActionKind.File:
+        asyncCheck muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
+      of ActionKind.Folder:
+        muk.filesystem.choosenidx = 0
+        muk.filesystemOpenDir(act.folderPath)
+        muk.filesystem.filter = ""
+        muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fsRemote.currentPath) # TODO need multiple caches
+      else:
+        discard
+
 
 proc quitGui(muk: Muk) =
   muk.tb.resetAttributes()
@@ -365,13 +388,21 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukRemoveSong:
     asyncCheck muk.mukc.removeSong(muk.playlist.choosenIdx)
   of MukDirUp:
-    muk.fs.up()
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      muk.fs.up()
+    of FilesystemKind.Remote:
+      muk.fsRemote.up()
     # muk.filesystem.choosenidx = 0
     muk.filesystemOpenDir(muk.fs.currentPath)
     muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
     muk.filesystem.filter = ""
   of MukAddStuff:
-    asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      asyncCheck muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+    of FilesystemKind.Remote:
+      asyncCheck muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()
     discard # TODO
   of MukVolumeUp:
@@ -402,10 +433,16 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     asyncCheck muk.mukc.toggleVideo()
   of MukCycleRepeat:
     asyncCheck muk.mukc.cylceRepeat()
+
   of MukFilesystemLocal:
     muk.filesystemKind = FilesystemKind.Local
+    muk.filesystem.fillFilesystem(muk.fs.ls())
   of MukFilesystemRemote:
     muk.filesystemKind = FilesystemKind.Remote
+    let remoteLs = (waitFor muk.mukc.remoteFsLs())
+    # muk.filesystem.title =  "REMOTE" # remoteLs.currentPath
+    muk.filesystem.fillFilesystem(remoteLs.listing)
+
   of MukSelectCurrentSongPlaylist:
     muk.playlist.choosenIdx = muk.playlist.highlightIdx
   of MukAction:
@@ -508,7 +545,11 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
       muk.btnPlayPause.text = ">>" # $($ctx.getPause())[0]
       muk.btnPlayPause.color = fgGreen
 
-    muk.filesystem.title = muk.fs.currentPath
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      muk.filesystem.title = muk.fs.currentPath
+    of FilesystemKind.Remote:
+      muk.filesystem.title = muk.fsRemote.currentPath
     muk.playlist.title = "Unnamed playlist (todo)"
 
     muk.filesystem.highlight = muk.inWidget == InWidget.Filesystem

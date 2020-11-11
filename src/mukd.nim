@@ -68,11 +68,11 @@ proc getControl_FSLS(mukd: Mukd): Message_Server_CONTROL =
   fsls.currentPath = mukd.fs.currentPath
   result.data = %* fsls
 
-proc getControl_ACTION(mukd: Mukd): Message_Server_CONTROL =
+proc getControl_ACTION(mukd: Mukd, act: Action): Message_Server_CONTROL =
   ## To inform the client about an action # TODO maybe send wich action
   result = newMsg Message_Server_CONTROL
   result.controlKind = FSACTION
-  result.data = %* nil
+  result.data = %* act
 
 proc setRepeatKind(mukd: Mukd, repeatKind: RepeatKind) =
   case repeatKind
@@ -311,21 +311,21 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       var answer = mukd.getControl_FSLS()
       await client.send(answer)
     of FSACTION:
-      discard
       let incoming = msg.data.to(Control_Client_FSACTION)
       var act = mukd.fs.action(incoming)
-      case act.kind
-      of ActionKind.File:
-        discard
-        mukd.ctx.addToPlaylistAndPlay(mukd.fs.currentPath /  incoming )
-        var answer = mukd.getControl_ACTION()
-        await client.send(answer)
-      of ActionKind.Folder:
-        var answer = mukd.getControl_FSLS()
-        await client.send(answer)
-      else:
-        var answer = mukd.getControl_ACTION()
-        await client.send(answer)
+      await client.send(mukd.getControl_ACTION(act))
+      # case act.kind
+      # of ActionKind.File:
+      #   discard
+      #   mukd.ctx.addToPlaylistAndPlay(mukd.fs.currentPath /  incoming )
+      #   var answer = mukd.getControl_ACTION()
+      #   await client.send(answer)
+      # of ActionKind.Folder:
+      #   var answer = mukd.getControl_FSLS()
+      #   await client.send(answer)
+      # else:
+      #   var answer = mukd.getControl_ACTION()
+      #   await client.send(answer)
     of FSUP:
       mukd.fs.up()
       var answer = mukd.getControl_FSLS()

@@ -1,4 +1,4 @@
-import messages, network, dbg, asyncnet, json
+import messages, network, dbg, asyncnet, json, filesys
 import tsonginfo, tplaylist, trepeatKind
 
 type
@@ -15,7 +15,10 @@ type
     listening*: Client
     running*: bool
 
-## High level network controls #########################
+########################################################
+# High level network controls
+########################################################
+
 proc setProgressInPercent*(mukc: Mukc, progress: float) {.async.} =
   var msg = newMsg Message_Client_CONTROL
   var data: Control_Client_PERCENTPOS = progress
@@ -116,6 +119,37 @@ proc toggleVideo*(mukc: Mukc) {.async.} =
   await mukc.control.send(msg)
 
 ########################################################
+# Remote filesystem
+########################################################
+proc remoteFsLs*(mukc: Mukc): Future[Control_Server_FSLS] {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.FSLS
+  msg.data = %* nil
+  await mukc.control.send(msg)
+  let answ = await mukc.control.recv(Message_Server_CONTROL)
+  return answ.data.to(Control_Server_FSLS)
+
+proc remoteFsUp*(mukc: Mukc): Future[Control_Server_FSLS] {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.FSUP
+  msg.data = %* nil
+  await mukc.control.send(msg)
+  let answ = await mukc.control.recv(Message_Server_CONTROL)
+  return answ.data.to(Control_Server_FSLS)
+
+proc remoteFsAction*(mukc: Mukc, action: string): Future[Action] {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.FSACTION
+  msg.data = %* action.Control_Client_FSACTION
+  await mukc.control.send(msg)
+  let answ = await mukc.control.recv(Message_Server_CONTROL)
+  return answ.data.to(Action)
+
+  # return answ.data.to(Control_Server_FSLS)
+
+########################################################
+# Client stuff
+########################################################
 
 proc newMukc*(): Mukc =
   result = Mukc()
@@ -202,4 +236,11 @@ when isMainModule:
   var cs = ClientStatus()
   if waitFor mukc.connect("127.0.0.1", 8889.Port):
     if waitFor mukc.authenticate("foo", "baa"):
+      echo waitFor mukc.remoteFsLs()
+      echo waitFor mukc.remoteFsUp()
+      echo waitFor mukc.remoteFsLs()
+      echo "######################################"
+      echo waitFor mukc.remoteFsAction("Users")
+      echo "######################################"
+
       waitFor mukc.collectFanouts(cs)

@@ -16,6 +16,7 @@ type
   Filesystem* = ref object
     currentPath*: string
     supportedExt: seq[string]
+  # RemoteFilesys* = ref object of Filesystem
 
 proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", ".webm"]): Filesystem =
   result = Filesystem()
