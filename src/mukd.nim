@@ -239,7 +239,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       var fan = mukd.getFanout_PROGRESS()
       await mukd.fanout(fan)
     of LOADFILE:
-      mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE).normalizedPath())
+      mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE).normalizedPath().replace("\\", "/"))
       var fan = newMsg(Message_Server_FANOUT)
       ## This only works after mpv has loaded the files etc, so this can only be fanouted after the mpv event
       # var songInfo: SongInfo = mukd.ctx.getMetadata().normalizeMetadata()
@@ -249,7 +249,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of LOADFILEAPPEND:
-      mukd.ctx.addToPlaylistAndPlay(msg.data.to(Control_Client_LOADFILEAPPEND).normalizedPath())
+      mukd.ctx.addToPlaylistAndPlay(msg.data.to(Control_Client_LOADFILEAPPEND).normalizedPath().replace("\\", "/"))
       var fan = newMsg(Message_Server_FANOUT)
       fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
