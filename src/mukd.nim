@@ -60,12 +60,12 @@ proc getFanout_REPEATKIND(mukd: Mukd): Message_Server_FANOUT =
   result.data = %* mukd.repeatKind
 
 # -----------------------------------------------------------------------
-proc getControl_FSLS(mukd: Mukd): Message_Server_CONTROL =
+proc getControl_FSLS(mukd: Mukd, forClient: Client): Message_Server_CONTROL =
   result = newMsg Message_Server_CONTROL
   result.controlKind = FSLS
   var fsls = Control_Server_FSLS()
-  fsls.listing = mukd.fs.ls()
-  fsls.currentPath = mukd.fs.currentPath
+  fsls.listing = mukd.clientFs[forClient].ls()
+  fsls.currentPath = mukd.clientFs[forClient].currentPath
   result.data = %* fsls
 
 proc getControl_ACTION(mukd: Mukd, act: Action): Message_Server_CONTROL =
@@ -111,7 +111,7 @@ proc newMukd(): Mukd =
   result.server = newAsyncSocket()
   result.server.setSockOpt(OptReuseAddr, true)
   result.config = loadConfig(getAppDir() / "mukd.ini")
-  result.fs = newFilesystem()
+  # result.fs = newFilesystem()
 
 proc setMpvOptions(mukd: Mukd) =
   echo "Forwarding mpv settings:"
@@ -237,6 +237,8 @@ proc handleListening(mukd: Mukd, client: Client) {.async.} =
 
 proc handleControl(mukd: Mukd, client: Client) {.async.} =
   dbg "Handle control"
+  dbg "Create a filesystem for the controlling client"
+  mukd.clientFs[client] = newFilesystem()
   while mukd.running:
 
     var msg: Message_Client_CONTROL
@@ -334,11 +336,11 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       if mukd.config.getSectionValue("video", "videoEnabled").parseBool():
         mukd.ctx.toggleVideo()
     of FSLS:
-      var answer = mukd.getControl_FSLS()
+      var answer = mukd.getControl_FSLS(client)
       await client.send(answer)
     of FSACTION:
       let incoming = msg.data.to(Control_Client_FSACTION)
-      var act = mukd.fs.action(incoming)
+      var act = mukd.clientFs[client].action(incoming)
       await client.send(mukd.getControl_ACTION(act))
       # case act.kind
       # of ActionKind.File:
@@ -353,8 +355,8 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       #   var answer = mukd.getControl_ACTION()
       #   await client.send(answer)
     of FSUP:
-      mukd.fs.up()
-      var answer = mukd.getControl_FSLS()
+      mukd.clientFs[client].up()
+      var answer = mukd.getControl_FSLS(client)
       await client.send(answer)
     # of FSCD:
     #   discard
@@ -366,8 +368,6 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       # # await client.send(answer)
       # # answer.controlKind = FSLS
       # await client.send(answer)
-
-
     else:
       discard
 
@@ -389,6 +389,8 @@ proc handleClient(mukd: Mukd, client: Client) {.async.} =
   except ClientDisconnected:
     echo "client gone..."
     mukd.listening.excl client
+    if mukd.clientFs.hasKey(client):
+      mukd.clientFs.del(client)
     discard
 
 proc serve(mukd: Mukd) {.async.} =
@@ -453,7 +455,7 @@ when isMainModule:
   echo newMsg(Message_Server_AUTH)
   var mukd = newMukd()
   mukd.initMpv()
-  mukd.fs.currentPath = getCurrentDir().absolutePath()
+  # mukd.fs.currentPath = getCurrentDir().absolutePath()
   mukd.loadDefaultPlaylist()
 
 

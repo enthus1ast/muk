@@ -1,4 +1,4 @@
-import sets, mpv, network, parsecfg
+import sets, mpv, network, parsecfg, tables
 import filesys
 import trepeatKind
 type
@@ -8,5 +8,5 @@ type
     ctx*: ptr handle
     listening*: HashSet[Client]
     config*: Config
-    fs*: Filesystem
+    clientFs*: Table[Client, Filesystem]
     repeatKind*: RepeatKind
