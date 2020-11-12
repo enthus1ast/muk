@@ -14,12 +14,9 @@ type
       folderContent*: seq[string]
     of ActionKind.None:
       why*: string
-
   Filesystem* = ref object
     currentPath*: string
     supportedExt: seq[string]
-  # RemoteFilesys* = ref object of Filesystem
-
 
 proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", ".webm"]): Filesystem =
   result = Filesystem()
@@ -36,7 +33,6 @@ proc up*(fs: Filesystem) =
     fs.currentPath = (fs.currentPath.parentDir()) #.absolutePath()
     if fs.currentPath == "":
       fs.currentPath = "/"
-
 
 proc down*(fs: Filesystem, folder: string) =
   let newPath = (fs.currentPath / folder.lastPathPart()).absolutePath()
@@ -55,14 +51,11 @@ proc ls*(fs: Filesystem): seq[string] =
       result.add line
     elif kind == pcFile or kind == pcLinkToFile:
       line = path.lastPathPart()
-      # echo line ,  line.splitFile().ext, fs.supportedExt
-      # quit()
       if fs.supportedExt.contains(line.splitFile().ext):
         result.add line
 
 proc action*(fs: Filesystem, path: string): Action =
   let actionPath = (fs.currentPath / path).absolutePath()
-  # echo path
   var kind: ActionKind
   if path.lastPathPart() == "..":
     result = Action(kind: ActionKind.Folder)
