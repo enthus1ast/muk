@@ -458,8 +458,18 @@ proc handleMouse(muk: Muk, key: Key) =
 
   ## Seek in song
   ev = muk.tb.dispatch(muk.progSongProgress, coords)
-  if ev.contains MouseDown:
+  if (ev.contains MouseDown) and (coords.button == mbLeft):
     waitFor muk.mukc.setProgressInPercent(muk.progSongProgress.valueOnPos(coords))
+  if (ev.contains MouseDown) and (coords.button == mbRight):
+    waitFor muk.mukc.togglePause()
+
+
+  ## Change volume
+  ev = muk.tb.dispatch(muk.progVolume, coords)
+  if (ev.contains MouseDown) and (coords.button == mbLeft):
+    waitFor muk.mukc.setVolumeInPercent(muk.progVolume.valueOnPos(coords))
+  if (ev.contains MouseDown) and (coords.button == mbRight):
+    waitFor muk.mukc.toggleMute()
 
   ## Click on pause
   ev = muk.tb.dispatch(muk.btnPlayPause, coords)

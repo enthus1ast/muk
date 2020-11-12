@@ -88,6 +88,22 @@ proc setRepeatKind(mukd: Mukd, repeatKind: RepeatKind) =
 
 #########################################################################
 
+proc savePlaylist(mukd: Mukd, path: string) =
+  echo "Save playlist: ", path
+  var fh = open(path, fmWrite)
+  for playlistSong in mukd.ctx.getPlaylist():
+    fh.writeLine(playlistSong.filename)
+  fh.close()
+
+proc loadDefaultPlaylist(mukd: Mukd) =
+  let defaultPlaylist = mukd.config.getSectionValue("playlist", "defaultPlaylist").absolutePath()
+  echo "Load default playlist:", defaultPlaylist
+  mukd.ctx.loadPlaylist(defaultPlaylist)
+
+proc saveDefaultPlaylist(mukd: Mukd) =
+  mukd.savePlaylist(
+    mukd.config.getSectionValue("playlist", "defaultPlaylist")
+  )
 
 proc newMukd(): Mukd =
   result = Mukd()
@@ -242,7 +258,9 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       await mukd.fanout(fan)
     of LOADFILE:
       mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE).normalizedPath().replace("\\", "/"))
+      mukd.saveDefaultPlaylist()
       var fan = newMsg(Message_Server_FANOUT)
+      # mukd.savePlaylist # TODO
       ## This only works after mpv has loaded the files etc, so this can only be fanouted after the mpv event
       # var songInfo: SongInfo = mukd.ctx.getMetadata().normalizeMetadata()
       # songInfo.path = mukd.ctx.getSongPath()
@@ -252,6 +270,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       await mukd.fanout(fan)
     of LOADFILEAPPEND:
       mukd.ctx.addToPlaylistAndPlay(msg.data.to(Control_Client_LOADFILEAPPEND).normalizedPath().replace("\\", "/"))
+      mukd.saveDefaultPlaylist()
       var fan = newMsg(Message_Server_FANOUT)
       fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
@@ -279,6 +298,10 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.volumeRelative(msg.data.to(Control_Client_VOLUMERELATIV))
       var fan = mukd.getFanout_VOLUME() # TODO
       await mukd.fanout(fan)
+    of VOLUMEPERCENT:
+      mukd.ctx.setVolume(msg.data.to(Control_Client_VOLUMEPERCENT))
+      var fan = mukd.getFanout_VOLUME() # TODO
+      await mukd.fanout(fan)
     of PLAYINDEX:
       mukd.ctx.playlistPlayIndex(msg.data.to(Control_Client_PLAYINDEX))
     of NEXTSONG:
@@ -291,6 +314,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       await mukd.fanout(fan)
     of CLEARPLAYLIST:
       mukd.ctx.clearPlaylist()
+      mukd.saveDefaultPlaylist()
       var fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of CYCLEREPEAT:
@@ -404,6 +428,7 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
         if mukd.config.getSectionValue("", "callForSongEnable").parseBool():
           mukd.callForSong(mukd.ctx.getMetadata().normalizeMetadata())
       elif mpvevent == "tracks-changed":
+        mukd.saveDefaultPlaylist()
         var fan = mukd.getFanout_PLAYLIST()
         await mukd.fanout fan
       elif mpvevent == "shutdown":
@@ -428,8 +453,8 @@ when isMainModule:
   echo newMsg(Message_Server_AUTH)
   var mukd = newMukd()
   mukd.initMpv()
-
   mukd.fs.currentPath = getCurrentDir().absolutePath()
+  mukd.loadDefaultPlaylist()
 
 
   asyncCheck mukd.fanoutMpvEvents()

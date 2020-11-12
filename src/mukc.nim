@@ -88,6 +88,13 @@ proc setVolumeRelative*(mukc: Mukc, volume: float) {.async.} =
   msg.data = %* data
   await mukc.control.send(msg)
 
+proc setVolumeInPercent*(mukc: Mukc, volume: float) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  var data: Control_Client_VOLUMEPERCENT = volume
+  msg.controlKind = Control_Kind.VOLUMEPERCENT
+  msg.data = %* data
+  await mukc.control.send(msg)
+
 proc removeSong*(mukc: Mukc, idx: int) {.async.} =
   var msg = newMsg Message_Client_CONTROL
   msg.controlKind = Control_Kind.REMOVESONG

@@ -33,6 +33,7 @@ type
     PERCENTPOS,
     TOGGLEMUTE,
     VOLUMERELATIV,
+    VOLUMEPERCENT,
     PLAYINDEX,
     NEXTSONG,
     PREVSONG,
@@ -59,6 +60,7 @@ type
   Control_Client_REMOVESONG* = int
   Control_Client_SEEKRELATIVE* = float
   Control_Client_VOLUMERELATIV* = float
+  Control_Client_VOLUMEPERCENT* = float
   Control_Client_PERCENTPOS* = float
   Control_Client_LOADFILE* = string
   Control_Client_LOADFILEAPPEND* = string

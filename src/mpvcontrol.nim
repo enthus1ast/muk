@@ -30,6 +30,9 @@ proc seekRelative*(ctx: ptr handle, seconds: float = 0.0) =
 proc volumeRelative*(ctx: ptr handle, num: float = 0.0) =
   tryIgnore:ctx.command(@["add", "volume", $num])
 
+proc setVolume*(ctx: ptr handle, num: float = 0.0) =
+  tryIgnore:ctx.set_property("volume", $num)
+
 proc getVolume*(ctx: ptr handle): float =
   tryIgnore: return ctx.get_property("volume").parseFloat()
 
@@ -140,3 +143,6 @@ proc loopPlaylist*(ctx: ptr handle, enabled: bool) =
 
 proc toggleVideo*(ctx: ptr handle) =
   tryIgnore ctx.command(@["cycle", "video"])
+
+proc loadPlaylist*(ctx: ptr handle, path: string) =
+  tryIgnore ctx.command("loadlist", path)
