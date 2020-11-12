@@ -52,3 +52,5 @@ type
     MukFilesystemRemote
 
     MukAction
+
+    MukToggleFullscreenWidget

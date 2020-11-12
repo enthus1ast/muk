@@ -29,9 +29,11 @@ type
     config: Config
     debugInfo: bool
     inWidget: InWidget
+    fullscreenWidget: bool
     # inWidgetStack: Stack[InWidget]
     lastSelectedIdx: Table[string, int]
     filesystemKind: FilesystemKind
+    # doLayout: bool
 
     # Gui widgets
     filesystem: ChooseBox
@@ -87,6 +89,8 @@ proc newMuk(): Muk =
   result.musikDir2 = result.config.getSectionValue("musicDirs", "musicDir2")
   result.musikDir3 = result.config.getSectionValue("musicDirs", "musicDir3")
   result.musikDir4 = result.config.getSectionValue("musicDirs", "musicDir4")
+
+  result.fullscreenWidget = false
 
   result.fs = newFilesystem()
   result.fsRemote = newFilesystemRemote(result.mukc)
@@ -148,15 +152,32 @@ proc newMuk(): Muk =
   result.keybindingSearch = defaultKeybindingSearch()
 
 proc layout(muk: Muk) =
-  muk.filesystem.x = 0
-  muk.filesystem.y = 0
-  muk.filesystem.w = (terminalWidth() div 2) - 2
-  muk.filesystem.h = terminalHeight() - 4
+  if muk.fullscreenWidget:
+    case muk.inWidget
+    of InWidget.Filesystem:
+      muk.filesystem.x = 0
+      muk.filesystem.y = 0
+      muk.filesystem.w = terminalWidth() - 2
+      muk.filesystem.h = terminalHeight() - 4
+    of InWidget.Playlist:
+      muk.playlist.x = 0
+      muk.playlist.y = 0
+      muk.playlist.w = terminalWidth() - 2
+      muk.playlist.h = terminalHeight() - 4
+    else: discard
 
-  muk.playlist.x = (terminalWidth() div 2) - 1
-  muk.playlist.y = 0
-  muk.playlist.w = (terminalWidth() - muk.filesystem.w) - 2
-  muk.playlist.h = terminalHeight() - 4
+  else: # no fullscreen widget
+    muk.filesystem.x = 0
+    muk.filesystem.y = 0
+    muk.filesystem.w = (terminalWidth() div 2) - 2
+    muk.filesystem.h = terminalHeight() - 4
+
+    muk.playlist.x = (terminalWidth() div 2) - 1
+    muk.playlist.y = 0
+    muk.playlist.w = (terminalWidth() - muk.filesystem.w) - 2
+    muk.playlist.h = terminalHeight() - 4
+
+
 
   muk.radRepNone.x = 0
   muk.radRepNone.y = terminalHeight() - 3
@@ -446,6 +467,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.playlist.choosenIdx = muk.playlist.highlightIdx
   of MukAction:
     muk.openAction()
+  of MukToggleFullscreenWidget:
+    muk.fullscreenWidget = not muk.fullscreenWidget
+    # muk.doLayout = true
   else:
     discard
 
@@ -524,6 +548,9 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
       muk.layout()
       sleep(50)
       oldDimenions = terminalSize()
+    else:
+      muk.layout() # only layout
+
 
     var key = getKey()
     if key == Key.None:
@@ -592,27 +619,32 @@ proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "
     of FilesystemKind.Remote:
       muk.radFilesysRemote.checked = true
 
-    doRender.inc
-    if doRender >= 0: # test if less rendering is also still good
-      doRender = 0
-      try:
+    try:
+      if muk.fullscreenWidget:
+        case muk.inWidget
+        of InWidget.Filesystem:
+          muk.tb.render(muk.filesystem)
+        of InWidget.Playlist:
+          muk.tb.render(muk.playlist)
+        else: discard
+      else:
         muk.tb.render(muk.filesystem)
         muk.tb.render(muk.playlist)
-        muk.tb.render(muk.infSongPath)
-        muk.tb.render(muk.progSongProgress)
-        muk.tb.render(muk.progVolume)
-        muk.tb.render(muk.btnPlayPause)
-        if muk.inWidget == InWidget.Search:
-          muk.tb.render(muk.txtSearch)
-        if muk.debugInfo:
-          muk.tb.render(muk.infLog)
-        muk.tb.render(muk.radGroupRep)
-        muk.tb.render(muk.radGroupFilesys)
-        muk.tb.write(24, terminalHeight() - 3, "|")
-        muk.tb.display()
-      except:
-        echo "COULD NOT RENDER"
-        echo getCurrentExceptionMsg()
+      muk.tb.render(muk.infSongPath)
+      muk.tb.render(muk.progSongProgress)
+      muk.tb.render(muk.progVolume)
+      muk.tb.render(muk.btnPlayPause)
+      if muk.inWidget == InWidget.Search:
+        muk.tb.render(muk.txtSearch)
+      if muk.debugInfo:
+        muk.tb.render(muk.infLog)
+      muk.tb.render(muk.radGroupRep)
+      muk.tb.render(muk.radGroupFilesys)
+      muk.tb.write(24, terminalHeight() - 3, "|")
+      muk.tb.display()
+    except:
+      echo "COULD NOT RENDER"
+      echo getCurrentExceptionMsg()
     poll(35)
 
 when isMainModule:

@@ -61,6 +61,7 @@ proc defaultKeybindingGlobal*(): Keybinding =
 
   result[Key.Enter] = MukAction
 
+  result[Key.T] = MukToggleFullscreenWidget
 
 
 proc defaultKeybindingPlaylist*(): Keybinding =
