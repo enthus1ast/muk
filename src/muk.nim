@@ -439,9 +439,8 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.filesystem.fillFilesystem(muk.fs.ls())
   of MukFilesystemRemote:
     muk.filesystemKind = FilesystemKind.Remote
-    let remoteLs = (waitFor muk.mukc.remoteFsLs())
-    # muk.filesystem.title =  "REMOTE" # remoteLs.currentPath
-    muk.filesystem.fillFilesystem(remoteLs.listing)
+    let remoteLs = muk.fsRemote.ls()
+    muk.filesystem.fillFilesystem(remoteLs)
 
   of MukSelectCurrentSongPlaylist:
     muk.playlist.choosenIdx = muk.playlist.highlightIdx

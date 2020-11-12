@@ -1,4 +1,6 @@
 import os
+when defined(windows):
+  import filesysWindowsFakeroot
 type
   ActionKind* {.pure.} = enum
     File, Folder, None
@@ -18,6 +20,7 @@ type
     supportedExt: seq[string]
   # RemoteFilesys* = ref object of Filesystem
 
+
 proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", ".webm"]): Filesystem =
   result = Filesystem()
   result.currentPath = currentPath.absolutePath()
@@ -25,7 +28,15 @@ proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", 
 
 proc up*(fs: Filesystem) =
   ## One folder up
-  fs.currentPath = (fs.currentPath / "..").absolutePath()
+  when defined(windows):
+    if fs.currentPath != "":
+      fs.currentPath = (fs.currentPath.parentDir()) #.absolutePath()
+      if fs.currentPath == ".": fs.currentPath = ""
+  else:
+    fs.currentPath = (fs.currentPath.parentDir()) #.absolutePath()
+    if fs.currentPath == "":
+      fs.currentPath = "/"
+
 
 proc down*(fs: Filesystem, folder: string) =
   let newPath = (fs.currentPath / folder.lastPathPart()).absolutePath()
@@ -33,6 +44,9 @@ proc down*(fs: Filesystem, folder: string) =
     fs.currentPath = newPath
 
 proc ls*(fs: Filesystem): seq[string] =
+  when defined(windows):
+    if fs.currentPath == "": # on top level
+      return getFakeRoot()
   result.add ".."
   for (kind, path) in walkDir(fs.currentPath):
     var line: string # = path
