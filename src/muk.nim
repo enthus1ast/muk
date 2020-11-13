@@ -1,5 +1,4 @@
 ## https://github.com/mpv-player/mpv/blob/master/etc/input.conf
-# --display-tags  String list (default: Artist,Album,Album_Artist,Comment,Composer,Date,Description,Genre,Performer,Rating,Series,Title,Track,icy-title,service_name)
 var doRender = 0
 var idleSteps = 0
 
@@ -33,7 +32,6 @@ type
     # inWidgetStack: Stack[InWidget]
     lastSelectedIdx: Table[string, int]
     filesystemKind: FilesystemKind
-    # doLayout: bool
 
     # Gui widgets
     filesystem: ChooseBox
@@ -157,12 +155,12 @@ proc layout(muk: Muk) =
     of InWidget.Filesystem:
       muk.filesystem.x = 0
       muk.filesystem.y = 0
-      muk.filesystem.w = terminalWidth() - 2
+      muk.filesystem.w = terminalWidth() - 1
       muk.filesystem.h = terminalHeight() - 4
     of InWidget.Playlist:
       muk.playlist.x = 0
       muk.playlist.y = 0
-      muk.playlist.w = terminalWidth() - 2
+      muk.playlist.w = terminalWidth() - 1
       muk.playlist.h = terminalHeight() - 4
     else: discard
 
@@ -176,8 +174,6 @@ proc layout(muk: Muk) =
     muk.playlist.y = 0
     muk.playlist.w = (terminalWidth() - muk.filesystem.w) - 2
     muk.playlist.h = terminalHeight() - 4
-
-
 
   muk.radRepNone.x = 0
   muk.radRepNone.y = terminalHeight() - 3
@@ -217,6 +213,7 @@ proc layout(muk: Muk) =
   muk.progVolume.x = terminalWidth() - 13
   muk.progVolume.y = terminalHeight() - 3
   muk.progVolume.l = 10
+
 
 proc banner(muk: Muk) =
   muk.tb.write 10, 3, "                  __    ";
@@ -286,8 +283,6 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
     waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
-    # muk.ctx.command(@["playlist-play-index", $muk.playlist.choosenidx])
-    discard # TODO
   elif muk.inWidget == InWidget.Filesystem:
     case muk.filesystemKind
     of FilesystemKind.Local:
@@ -425,7 +420,6 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     of FilesystemKind.Remote:
       waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()
-    discard # TODO
   of MukVolumeUp:
     waitFor muk.mukc.setVolumeRelative(5)
   of MukVolumeDown:
@@ -516,7 +510,6 @@ proc handleMouse(muk: Muk, key: Key) =
     muk.inWidget = InWidget.Playlist
     muk.log(muk.playlist.element())
     waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
-    discard # TODO
 
   ## Search
   if muk.inWidget == InWidget.Search:

@@ -29,7 +29,8 @@ Keyboard Binding
 | BOTH | {p} | Pause/Resum |
 | BOTH | {p} | Pause/Resum |
 | BOTH | {r} | Cycle Repeat Modes |
-| BOTH | {v} | ~Show/Hide video~ |
+| BOTH | {v} | Show/Hide video |
+| BOTH | {t} | playlist / filesystem fullscreen |
 | BOTH | {ShiftC} | Clear the playlist |
 | BOTH | {i} | Open debug log / song information |
 | BOTH | {,} | Local Filesystem|
