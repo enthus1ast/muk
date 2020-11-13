@@ -237,8 +237,7 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
-when isMainModule:
-  import cligen
+proc tst() =
   var mukc = newMukc()
   var cs = ClientStatus()
   if waitFor mukc.connect("127.0.0.1", 8889.Port):
@@ -249,5 +248,8 @@ when isMainModule:
       echo "######################################"
       echo waitFor mukc.remoteFsAction("Users")
       echo "######################################"
-
       waitFor mukc.collectFanouts(cs)
+
+when isMainModule:
+  import cligen
+  dispatchMulti([tst])
