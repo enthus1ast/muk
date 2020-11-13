@@ -164,35 +164,41 @@ proc newMukc*(): Mukc =
   result.control = Client() # TODO call this Remote
   result.listening = Client() # TODO call this Remote
 
+proc connectOne*(mukc: Mukc, host: string, port: Port): Future[Client] {.async.} =
+  result = newClient(host, await asyncnet.dial(host, port))
+
 proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
   ## Connect to a mukd. Returns false if connection is not possible
   try:
-    mukc.control = newClient(host, await asyncnet.dial(host, port))
-    mukc.listening = newClient(host, (await asyncnet.dial(host, port)))
+    mukc.control = await mukc.connectOne(host, port)
+    mukc.listening = await mukc.connectOne(host, port)
     return true
   except:
     dbg "Could not connect to host: " & host & ":" & $port
     dbg getCurrentExceptionMsg()
     return false
 
-proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async.} =
+proc authenticateOne*(client: Client, username, password: string): Future[bool] {.async.} =
   var msg = newMsg(Message_Client_Auth)
   msg.username = username
   msg.password = password
   try:
-    discard await mukc.control.recv(Message_Server_AUTH)
-    await mukc.control.send(msg)
-    discard await mukc.control.recv(Message_GOOD)
+    discard await client.recv(Message_Server_AUTH)
+    await client.send(msg)
+    discard await client.recv(Message_GOOD)
+    return true
+  except:
+    return false
 
+proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async.} =
+  try:
+    if (await mukc.control.authenticateOne(username, password)) == false: return false
     discard await mukc.control.recv(Message_Server_PURPOSE)
     var purpose = newMsg(Message_Client_PURPOSE)
     purpose.socketPurpose = SocketPurpose.Control
     await mukc.control.send(purpose)
 
-    discard await mukc.listening.recv(Message_Server_AUTH)
-    await mukc.listening.send(msg)
-    discard await mukc.listening.recv(Message_GOOD)
-
+    if (await mukc.listening.authenticateOne(username, password)) == false: return false
     discard await mukc.listening.recv(Message_Server_PURPOSE)
     purpose = newMsg(Message_Client_PURPOSE)
     purpose.socketPurpose = SocketPurpose.Listening
@@ -237,19 +243,41 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
-proc tst() =
-  var mukc = newMukc()
-  var cs = ClientStatus()
-  if waitFor mukc.connect("127.0.0.1", 8889.Port):
-    if waitFor mukc.authenticate("foo", "baa"):
-      echo waitFor mukc.remoteFsLs()
-      echo waitFor mukc.remoteFsUp()
-      echo waitFor mukc.remoteFsLs()
-      echo "######################################"
-      echo waitFor mukc.remoteFsAction("Users")
-      echo "######################################"
-      waitFor mukc.collectFanouts(cs)
+# proc uploadSocket*(mukc: Mukc, host: string, port: Port, username, password: string): AsyncSocket {.async.} =
+#   ## Returns an upload socket # TODO code here is copy pasted, modularize mukc better!
+#   try:
+#     result = await asyncnet.dial(host, port)
+#   except:
+#     echo "could not connect upload socket"
+#     return
+
+
+
+
 
 when isMainModule:
   import cligen
+
+  # import fileUpload
+  # proc upload(file: string) =
+  #   var mukc = newMukc()
+  #   var cs = ClientStatus()
+  #   if waitFor mukc.connect("127.0.0.1", 8889.Port):
+  #     if waitFor mukc.authenticate("foo", "baa"):
+
+
+  proc tst() =
+    var mukc = newMukc()
+    var cs = ClientStatus()
+    if waitFor mukc.connect("127.0.0.1", 8889.Port):
+      if waitFor mukc.authenticate("foo", "baa"):
+        echo waitFor mukc.remoteFsLs()
+        echo waitFor mukc.remoteFsUp()
+        echo waitFor mukc.remoteFsLs()
+        echo "######################################"
+        echo waitFor mukc.remoteFsAction("Users")
+        echo "######################################"
+        waitFor mukc.collectFanouts(cs)
+
+
   dispatchMulti([tst])
