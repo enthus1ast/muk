@@ -306,6 +306,7 @@ proc openAction(muk: Muk) =
         if muk.isLocal():
           waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
         else:
+          # TODO this is copy pasta (and add append)
           asyncCheck muk.mukc.uploadFile(
             muk.host,
             muk.port,
@@ -439,7 +440,19 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukAddStuff:
     case muk.filesystemKind
     of FilesystemKind.Local:
-      waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+      if muk.isLocal:
+        waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+      else:
+          # TODO this is copy pasta
+          # TODO this only works for files atm, and no progress and nothing... but it works atm :)
+          asyncCheck muk.mukc.uploadFile(
+            muk.host,
+            muk.port,
+            muk.username,
+            muk.password,
+            muk.fs.currentPath / muk.filesystem.element(),
+            PostUploadAction.Play
+          )
     of FilesystemKind.Remote:
       waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()

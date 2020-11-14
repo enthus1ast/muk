@@ -410,10 +410,18 @@ proc handleUpload(mukd: Mukd, client: Client) {.async.} =
     echo "PostUploadAction.Append"
     mukd.ctx.addToPlaylist(path)
 
+    # TODO this and the one below is copy pasta
+    mukd.saveDefaultPlaylist()
+    var fan = mukd.getFanout_PLAYLIST()
+    await mukd.fanout fan
+
   of PostUploadAction.Play:
     echo "PostUploadAction.Play"
     mukd.ctx.addToPlaylistAndPlay(path)
-    # mukd.ctx.loadfile(path)
+    # TODO copy pasta
+    mukd.saveDefaultPlaylist()
+    var fan = mukd.getFanout_PLAYLIST()
+    await mukd.fanout fan
   else: discard
   # TODO
   # - test size
