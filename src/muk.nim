@@ -21,6 +21,10 @@ type
     Local, Remote
   Muk = ref object
     mukc: Mukc
+    host*: string
+    port*: Port
+    username*: string
+    password*: string
     cs: ClientStatus
     fs: Filesystem
     fsRemote: FilesystemRemote
@@ -76,6 +80,15 @@ proc storeLastSelectedIndex(muk: Muk, path: string, idx: int) =
 
 proc getLastSelectedIndex(muk: Muk, path: string): int =
   return muk.lastSelectedIdx.getOrDefault(path, 0)
+
+proc isLocal*(muk: Muk): bool =
+  ## This tests is the mukd server is running locally or remotely,
+  ## We later use this information to decide if we must upload data
+  ## TODO this might be not accurate, but for now its good enough
+  if muk.host == "localhost": return true
+  elif muk.host == "::1": return true
+  elif muk.host == "127.0.0.1": return true
+  return false
 
 proc newMuk(): Muk =
   result = Muk()
@@ -290,7 +303,17 @@ proc openAction(muk: Muk) =
       muk.infSongPath.text = muk.fs.currentPath & "|" & $act #fs # filesystem.element()
       case act.kind
       of ActionKind.File:
-        waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+        if muk.isLocal():
+          waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
+        else:
+          asyncCheck muk.mukc.uploadFile(
+            muk.host,
+            muk.port,
+            muk.username,
+            muk.password,
+            muk.fs.currentPath / muk.filesystem.element(),
+            PostUploadAction.Play
+          )
       of ActionKind.Folder:
         muk.filesystem.choosenidx = 0
         muk.filesystemOpenDir(act.folderPath)
@@ -522,10 +545,13 @@ proc renderCurrentSongInfo(muk: Muk): string =
   result &= muk.cs.metadata.title & " | "
   result &= muk.cs.metadata.path
 
-proc main(host: string = "http://127.0.0.1:8889", username = "foo", password = "baa"): int =
-  let url = parseUri(host)
+proc main(host: string = "127.0.0.1", port: int = 8889, username = "foo", password = "baa"): int =
   var muk = newMuk()
-  if waitFor muk.mukc.connect(url.hostname, url.port.parseInt().Port):
+  muk.host = host
+  muk.port = port.Port
+  muk.username = username
+  muk.password = password
+  if waitFor muk.mukc.connect(host, port.Port):
     if waitFor muk.mukc.authenticate(username, password):
       asyncCheck muk.mukc.collectFanouts(muk.cs)
 

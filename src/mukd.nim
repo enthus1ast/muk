@@ -1,5 +1,5 @@
 ## This is the muk server part.
-import net, asyncnet, asyncdispatch, json, strutils, os, tables
+import net, asyncnet, asyncdispatch, json, strutils, os, tables, asyncfile
 import dbg
 import mpv
 import sets
@@ -10,8 +10,10 @@ import templates
 import parsecfg
 import filesys
 
-import tsonginfo, trepeatKind
+import tsonginfo, trepeatKind, tuploadInfo
 import tmukd
+
+# from fileUpload import CHUNK_SIZE
 
 const
   PORT = 8889.Port
@@ -371,6 +373,55 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
     else:
       discard
 
+proc handleUpload(mukd: Mukd, client: Client) {.async.} =
+  echo "new fileupload: ", client.address
+  var msg: Message_Client_UPLOAD
+  try:
+    msg = await client.recv(Message_Client_UPLOAD)
+  except:
+    dbg "could not receive Message_Client_UPLOAD"
+    client.kill()
+    return
+  var uploadInfo: UploadInfo
+  let path = getAppDir() / mukd.config.getSectionValue("upload", "uploadFolder") / msg.uploadInfo.name
+  # if path.fileExists():
+  #   await client.sendBad()
+  #   client.kill()
+  #   return
+  await client.sendGood()
+  echo "GOOD"
+  echo path
+  var received = 0
+  var fh = openAsync(path, fmWrite)
+  echo "OPENFILE"
+  var chunk = newStringOfCap(CHUNK_SIZE)
+  while true: # not client.socket.isClosed: # TODO this is an error case! or not received < uploadInfo.size:
+    chunk = await client.socket.recv(CHUNK_SIZE)
+    # echo "CHUNK: ", chunk.len
+    if chunk == "": break
+    await fh.write(chunk)
+  fh.close()
+  echo "upload done: ", path
+  case msg.postUploadAction
+  of PostUploadAction.Nothing:
+    echo "PostUploadAction.Nothing"
+    discard
+  of PostUploadAction.Append:
+    echo "PostUploadAction.Append"
+    mukd.ctx.addToPlaylist(path)
+  of PostUploadAction.Play:
+    echo "PostUploadAction.Play"
+    mukd.ctx.addToPlaylistAndPlay(path)
+    # mukd.ctx.loadfile(path)
+  else: discard
+  # TODO
+  # - test size
+  # - test checksum?
+  # - Fanout download
+  # client.kill()
+  return
+
+
 proc handleClient(mukd: Mukd, client: Client) {.async.} =
   echo "new connection: ", client.address
   try:
@@ -383,6 +434,8 @@ proc handleClient(mukd: Mukd, client: Client) {.async.} =
       await mukd.handleListening(client)
     of SocketPurpose.Control:
       await mukd.handleControl(client)
+    of SocketPurpose.Upload:
+      await mukd.handleUpload(client)
     else:
       client.kill()
 

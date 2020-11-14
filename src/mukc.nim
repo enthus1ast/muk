@@ -1,4 +1,4 @@
-import messages, network, dbg, asyncnet, json, filesys
+import messages, network, dbg, asyncnet, json, filesys, asyncfile, fileupload
 import tsonginfo, tplaylist, trepeatKind
 
 type
@@ -178,6 +178,12 @@ proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
     dbg getCurrentExceptionMsg()
     return false
 
+proc purpose*(client: Client, purpose: SocketPurpose) {.async.} =
+  discard await client.recv(Message_Server_PURPOSE)
+  var purposeMsg = newMsg(Message_Client_PURPOSE)
+  purposeMsg.socketPurpose = purpose
+  await client.send(purposeMsg)
+
 proc authenticateOne*(client: Client, username, password: string): Future[bool] {.async.} =
   var msg = newMsg(Message_Client_Auth)
   msg.username = username
@@ -190,24 +196,20 @@ proc authenticateOne*(client: Client, username, password: string): Future[bool] 
   except:
     return false
 
+
 proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async.} =
   try:
     if (await mukc.control.authenticateOne(username, password)) == false: return false
-    discard await mukc.control.recv(Message_Server_PURPOSE)
-    var purpose = newMsg(Message_Client_PURPOSE)
-    purpose.socketPurpose = SocketPurpose.Control
-    await mukc.control.send(purpose)
+    await mukc.control.purpose(SocketPurpose.Control)
 
     if (await mukc.listening.authenticateOne(username, password)) == false: return false
-    discard await mukc.listening.recv(Message_Server_PURPOSE)
-    purpose = newMsg(Message_Client_PURPOSE)
-    purpose.socketPurpose = SocketPurpose.Listening
-    await mukc.listening.send(purpose)
+    await mukc.listening.purpose(SocketPurpose.Listening)
 
     return true
   except:
     dbg "Could not authenticate"
     return false
+
 
 proc recvFanout(mukc: Mukc) {.async.} =
   var st = 0
@@ -243,41 +245,66 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
-# proc uploadSocket*(mukc: Mukc, host: string, port: Port, username, password: string): AsyncSocket {.async.} =
-#   ## Returns an upload socket # TODO code here is copy pasted, modularize mukc better!
-#   try:
-#     result = await asyncnet.dial(host, port)
-#   except:
-#     echo "could not connect upload socket"
-#     return
+import strutils
+proc uploadFile*(mukc: Mukc, host: string, port: Port,
+    username, password, path: string, postUploadAction = PostUploadAction.Nothing) {.async.} =
+  ## Returns an upload socket # TODO code here is copy pasted, modularize mukc better!
+  # try:
+  #   result = await asyncnet.dial(host, port)
+  # except:
+  #   echo "could not connect upload socket"
+  #   return
+  var client = await mukc.connectOne(host, port)
+  if await client.authenticateOne(username, password):
+    await client.purpose(SocketPurpose.Upload)
+  else: return
+  var msg = newMsg Message_Client_UPLOAD
+  msg.postUploadAction = postUploadAction
+  var fh = openAsync(path, fmRead)
+  msg.uploadInfo = getUploadInfo(fh, path)
 
+  await client.send(msg)
+  discard await client.recv(Message_GOOD)
 
-
-
+  var progress = 0
+  var buffer = newStringOfCap(CHUNK_SIZE)
+  while true:
+    buffer = await fh.read(CHUNK_SIZE)
+    # echo buffer.len
+    if buffer == "":
+      # client.kill()
+      client.socket.close()
+      break
+    progress.inc buffer.len
+    # stdout.write
+    # echo progress.formatSize().alignLeft(10) & "/" & msg.uploadInfo.size.formatSize().align(10) # & "\r"
+    await client.socket.send(buffer)
+    # stdout.flushFile()
 
 when isMainModule:
   import cligen
 
-  # import fileUpload
-  # proc upload(file: string) =
+  import fileUpload
+  proc upload(file: string) =
+    var mukc = newMukc()
+    waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\01 - Magic Brush.mp3""")
+    waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\02 - Skyrock.mp3""", postUploadAction = PostUploadAction.Play)
+
+
+  upload("")
+
+  # proc tst() =
   #   var mukc = newMukc()
   #   var cs = ClientStatus()
   #   if waitFor mukc.connect("127.0.0.1", 8889.Port):
   #     if waitFor mukc.authenticate("foo", "baa"):
+  #       echo waitFor mukc.remoteFsLs()
+  #       echo waitFor mukc.remoteFsUp()
+  #       echo waitFor mukc.remoteFsLs()
+  #       echo "######################################"
+  #       echo waitFor mukc.remoteFsAction("Users")
+  #       echo "######################################"
+  #       waitFor mukc.collectFanouts(cs)
 
 
-  proc tst() =
-    var mukc = newMukc()
-    var cs = ClientStatus()
-    if waitFor mukc.connect("127.0.0.1", 8889.Port):
-      if waitFor mukc.authenticate("foo", "baa"):
-        echo waitFor mukc.remoteFsLs()
-        echo waitFor mukc.remoteFsUp()
-        echo waitFor mukc.remoteFsLs()
-        echo "######################################"
-        echo waitFor mukc.remoteFsAction("Users")
-        echo "######################################"
-        waitFor mukc.collectFanouts(cs)
-
-
-  dispatchMulti([tst])
+  # dispatchMulti([tst])

@@ -2,11 +2,17 @@ from json import JsonNode
 import tsonginfo
 import tplaylist
 import trepeatKind
+import tuploadInfo
 type
+  PostUploadAction* {.pure.} = enum
+    Nothing,
+    Append,
+    Play
   SocketPurpose* {.pure.} = enum
     Unknown
     Listening, ## Client never initial sends, server sends status changes...
     Control ## Server never initialy sends, client sends command, server answers...
+    Upload
     # FileDownload, FileUpload
   MessageTypes* {.pure.} = enum
     UNKNOWN,
@@ -17,6 +23,7 @@ type
     PURPOSE,
     FANOUT,
     CONTROL,
+    UPLOAD
     PROTOCOLVIOLATION
   Message* = object of RootObj
     kind*: MessageTypes
@@ -66,6 +73,9 @@ type
   Control_Client_LOADFILEAPPEND* = string
   Control_Client_PAUSE* = bool
   Control_Client_PLAYINDEX* = int
+  Message_Client_UPLOAD* = object of Message
+    uploadInfo*: UploadInfo
+    postUploadAction*: PostUploadAction
   Message_Client_CONTROL* = object of Message
     data*: JsonNode
     controlKind*: ControlKind
