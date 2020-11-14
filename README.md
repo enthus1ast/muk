@@ -1,5 +1,10 @@
+
 MUK
 ====
+
+![muk](./img.png)
+
+
 
 Prototype (!!!) of a crossplattform terminal music and video player.
 Inspired by moc and mpd.
