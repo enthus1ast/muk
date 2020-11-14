@@ -611,7 +611,7 @@ proc main(host: string = "127.0.0.1", port: int = 8889, username = "foo", passwo
 
     muk.infSongPath.text = muk.renderCurrentSongInfo()
 
-    setTerminalTitle("muk " & muk.renderCurrentSongInfo()) ## TODO not every tick
+    setTerminalTitle("muk | " & muk.renderCurrentSongInfo()) ## TODO not every tick
 
     muk.progSongProgress.value = muk.getProgressInPercent()
     muk.progSongProgress.text = muk.infoCurrentSongDurationSeconds()  #$ctx.getProgressInPercent()
