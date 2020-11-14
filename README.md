@@ -25,8 +25,8 @@ Keyboard Binding
 | ------------- |:-------------:| -----:|
 | BOTH | {TAB}  | Switch Pane Filesystem <-> Playlist |
 | BOTH | {j}/{k}/{DOWN}/{UP} | DOWN/UP Selection |
-| BOTH | {h}/{l}/{LEFT}/{RIGHT} | Seek backwards/forwars |
-| BOTH | {ShiftH}/{ShiftL}/{LeftBracket}/{RightBracket}  | Seek backwards/forwars faster |
+| BOTH | {h}/{l}/{LEFT}/{RIGHT} | Seek backwards/forwards |
+| BOTH | {ShiftH}/{ShiftL}/{LeftBracket}/{RightBracket}  | Seek backwards/forwards faster |
 | BOTH | {-}/{+} | Volume DOWN/UP |
 | BOTH | {ShiftJ, ShifK} | Next/Previous song |
 | BOTH | {Enter} | Play/Open |
