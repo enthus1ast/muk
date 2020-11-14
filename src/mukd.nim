@@ -9,7 +9,7 @@ import mpvcontrol
 import templates
 import parsecfg
 import filesys
-
+import auth
 import tsonginfo, trepeatKind, tuploadInfo
 import tmukd
 
@@ -107,15 +107,24 @@ proc saveDefaultPlaylist(mukd: Mukd) =
     mukd.config.getSectionValue("playlist", "defaultPlaylist")
   )
 
+proc enumerationToSet(str: string): HashSet[string] =
+  # eg: ".mp3 .ogg .opus .flac .wav" to HashSet
+  result = initHashSet[string]()
+  for elem in str.split(" "):
+    result.incl elem
+
 proc newMukd(): Mukd =
   result = Mukd()
   result.running = true
   result.server = newAsyncSocket()
   result.server.setSockOpt(OptReuseAddr, true)
   result.config = loadConfig(getAppDir() / "mukd.ini")
+  result.allowedUploadExtensions = result.config.getSectionValue("upload", "allowedExtensions").enumerationToSet()
+  result.users = loadUsers(getAppDir() / "users.db")
   # result.fs = newFilesystem()
 
 proc setMpvOptions(mukd: Mukd) =
+  ## Forwards the [mpv] part of mukd.ini directly to libmpv
   echo "Forwarding mpv settings:"
   for key, val in mukd.config["mpv"]:
     echo "set: ", key, " = ", val
@@ -134,7 +143,8 @@ proc initMpv(mukd: Mukd) =
 
 proc authGood*(mukd: Mukd, username, password: string): bool =
   ## TODO
-  return username == "foo" and password == "baa"
+  # return username == "foo" and password == "baa"
+  return mukd.users.valid(username, password)
 
 proc askForSocketPurpose*(mukd: Mukd, client: Client): Future[SocketPurpose] {.async.} =
   dbg "Ask client socket for purpose: ", client.address
@@ -382,12 +392,35 @@ proc handleUpload(mukd: Mukd, client: Client) {.async.} =
     dbg "could not receive Message_Client_UPLOAD"
     client.kill()
     return
+
+  if not mukd.config.getSectionValue("upload", "uploadEnabled").parseBool():
+    echo "upload is disabled"
+    await client.sendBad()
+    client.kill()
+    return
+
   var uploadInfo: UploadInfo
   let path = getAppDir() / mukd.config.getSectionValue("upload", "uploadFolder") / msg.uploadInfo.name
-  # if path.fileExists():
-  #   await client.sendBad()
-  #   client.kill()
-  #   return
+
+  let maxUploadSizeByte =  mukd.config.getSectionValue("upload", "maxUploadSize").parseInt()
+  if uploadInfo.size > maxUploadSizeByte * 1000 * 1000:
+    echo "file size is too large, incoming: ", uploadInfo.size.formatSize(), " maxUploadSize:", maxUploadSizeByte.formatSize()
+    await client.sendBad()
+    client.kill()
+    return
+
+  if not mukd.allowedUploadExtensions.contains(path.splitFile().ext):
+    echo "extension is not allowed to be uploaded: ", path.splitFile().ext
+    await client.sendBad()
+    client.kill()
+    return
+
+  if path.fileExists():
+    echo "file exists: ", path
+    await client.sendBad()
+    client.kill()
+    return
+
   await client.sendGood()
   echo "GOOD"
   echo path
@@ -436,6 +469,7 @@ proc handleClient(mukd: Mukd, client: Client) {.async.} =
   try:
     if not (await mukd.handleAuth(client)):
       client.kill()
+      return
 
     let purpose = (await mukd.askForSocketPurpose(client))
     case purpose

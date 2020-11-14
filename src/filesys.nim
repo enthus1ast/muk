@@ -1,4 +1,4 @@
-import os
+import os, algorithm
 when defined(windows):
   import filesysWindowsFakeroot
 type
@@ -18,7 +18,7 @@ type
     currentPath*: string
     supportedExt: seq[string]
 
-proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", ".webm"]): Filesystem =
+proc newFilesystem*(currentPath = getAppDir(), supportedExt = @[".mp3", ".mp4", ".webm", ".ogg", ".opus", ".flac", ".wav"]): Filesystem =
   result = Filesystem()
   result.currentPath = currentPath.absolutePath()
   result.supportedExt = supportedExt
@@ -44,15 +44,17 @@ proc ls*(fs: Filesystem): seq[string] =
     if fs.currentPath == "": # on top level
       return getFakeRoot()
   result.add ".."
+  var elems: seq[string]
   for (kind, path) in walkDir(fs.currentPath):
     var line: string # = path
     if kind == pcDir or kind == pcLinkToDir:
       line = path.lastPathPart() # & "/"
-      result.add line
+      elems.add line
     elif kind == pcFile or kind == pcLinkToFile:
       line = path.lastPathPart()
       if fs.supportedExt.contains(line.splitFile().ext):
-        result.add line
+        elems.add line
+  result.add elems.sorted(order = SortOrder.Ascending)
 
 proc action*(fs: Filesystem, path: string): Action =
   let actionPath = (fs.currentPath / path).absolutePath()

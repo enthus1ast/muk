@@ -78,6 +78,14 @@ Features
 - [ ] custom colorscheme (low priority)
 - [ ] Playlist support
 
+
+Create (network) users
+------------
+
+```
+auth add -u username -p password
+```
+
 Network Protocol
 ----------------
 

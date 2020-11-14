@@ -248,12 +248,6 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
 import strutils
 proc uploadFile*(mukc: Mukc, host: string, port: Port,
     username, password, path: string, postUploadAction = PostUploadAction.Nothing) {.async.} =
-  ## Returns an upload socket # TODO code here is copy pasted, modularize mukc better!
-  # try:
-  #   result = await asyncnet.dial(host, port)
-  # except:
-  #   echo "could not connect upload socket"
-  #   return
   var client = await mukc.connectOne(host, port)
   if await client.authenticateOne(username, password):
     await client.purpose(SocketPurpose.Upload)
@@ -264,7 +258,10 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
   msg.uploadInfo = getUploadInfo(fh, path)
 
   await client.send(msg)
-  discard await client.recv(Message_GOOD)
+  try:
+    discard await client.recv(Message_GOOD)
+  except:
+    return
 
   var progress = 0
   var buffer = newStringOfCap(CHUNK_SIZE)

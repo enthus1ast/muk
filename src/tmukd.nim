@@ -1,4 +1,4 @@
-import sets, mpv, network, parsecfg, tables
+import sets, mpv, network, parsecfg, tables, auth
 import filesys
 import trepeatKind
 type
@@ -10,3 +10,5 @@ type
     config*: Config
     clientFs*: Table[Client, Filesystem]
     repeatKind*: RepeatKind
+    allowedUploadExtensions*: HashSet[string]
+    users*: Users

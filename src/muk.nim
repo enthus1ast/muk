@@ -564,9 +564,17 @@ proc main(host: string = "127.0.0.1", port: int = 8889, username = "foo", passwo
   muk.port = port.Port
   muk.username = username
   muk.password = password
-  if waitFor muk.mukc.connect(host, port.Port):
-    if waitFor muk.mukc.authenticate(username, password):
-      asyncCheck muk.mukc.collectFanouts(muk.cs)
+  if not waitFor muk.mukc.connect(host, port.Port):
+    illwillDeinit()
+    echo "Could not connect to: ", host, " ", port
+    quit()
+
+  if not waitFor muk.mukc.authenticate(username, password):
+    illwillDeinit()
+    echo "Authentication failed :("
+    quit()
+
+  asyncCheck muk.mukc.collectFanouts(muk.cs)
 
   muk.filesystemOpenDir(getCurrentDir().absolutePath())
   muk.layout()
