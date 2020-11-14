@@ -1,0 +1,9 @@
+*.exe
+src/uploads/*
+private/*
+src/users.db
+src/mpvlogfile.txt
+src/playlist.list
+.vscode/*
+release/*
+src/muk

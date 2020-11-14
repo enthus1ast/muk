@@ -1,0 +1,18 @@
+{"kind": "AUTH", "username": "foo", "password": "baa"}
+{"kind": "PURPOSE", "socketPurpose": "CONTROL"}
+{"kind": "CONTROL", "data": "C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3", "controlKind": "LOADFILE"}
+{"kind": "CONTROL", "data": null, "controlKind": "TOGGLEPAUSE"}
+{"kind": "CONTROL", "data": "C:\Users\david\Music\2016 - Nonagon Infinity\02. Big Fig Wasp.mp3", "controlKind": "LOADFILE"}
+{"kind": "CONTROL", "data": 5, "controlKind": "SEEKRELATIVE"}
+
+
+
+{"kind": "AUTH", "username": "foo", "password": "baa"}
+{"kind": "PURPOSE", "socketPurpose": "CONTROL"}
+{"kind": "CONTROL", "data": "", "controlKind": "FSLS"}
+
+
+{"kind": "AUTH", "username": "foo", "password": "baa"}
+{"kind": "PURPOSE", "socketPurpose": "LISTENING"}
+{"kind": "GOOD"}
+{"kind": "CONTROL", "data": "C:\Users\david\Music\2016 - Nonagon Infinity\01. Robot Stop.mp3", "controlKind": "LOADFILE"}
