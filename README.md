@@ -46,7 +46,7 @@ Keyboard Binding
 | BOTH | right Mouse| activate (play/add,etc) |
 | BOTH | {q} | quit muk (the gui) |
 | BOTH | {ShiftQ} | quit mukd (the server) if allowed |
-| Filesystem | {ShiftG} | Search recursive |
+| Filesystem | ~~{ShiftG}~~ | ~~Search recursive~~ |
 | Filesystem | {:}/{Backspace} | One folder up |
 | Filesystem | {a} | Add song/directory to playlist |
 | Playlist | {d}/~{Del}~ | Remove a song from the playlist |
