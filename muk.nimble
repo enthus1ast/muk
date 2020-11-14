@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.0.1"
+version       = "0.1.0"
 author        = "enthus1ast"
 description   = "crossplattform terminal music player. Inspired by moc and mpd."
 license       = "MIT"

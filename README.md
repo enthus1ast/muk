@@ -58,25 +58,25 @@ Features
   - [x] standalone gui
   - [x] standalone audio backend
   - [x] network code
-    - [ ] Username/Password auth (protocol supports it, credentials are hardcoded atm)
+    - [x] Username/Password auth
     - [ ] secure networking
       - [ ] Encryption
       - [ ] Secure login
   - [x] (gui) local filesystem
-  - [ ] (gui) remote filesystem -> browse server filesystem from gui
-- [ ] One click, up and download, music from client <-> server
+  - [x] (gui) remote filesystem -> browse server filesystem from gui
+- [x] One click, up and download, music from client <-> server
 - [x] Lyric fetcher (not yet intigrated)
-- [ ] Cross platform
+- [x] Cross platform
   - [x] Linux
   - [x] Windows
   - [ ] ~~Macos~~ (low priority; need testers; will not provide binaries; if you like muk build it yourself; sorry)
   - [x] ssh, tmux (no mouse support), etc..
-- [ ] Video support when running on a window manager
-- [x] mouse support
+- [x] Video support when running on a window manager
+- [x] mouse support (partial ATM)
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
 - [x] custom keybindings (requires recompilation ATM)
 - [ ] custom colorscheme (low priority)
-- [ ] Playlist support
+- [x] Playlist support (partial, only the current playlist is saved)
 
 
 Create (network) users
@@ -105,14 +105,14 @@ Build from source
 
 TODO
 
+- install libmpv dev
+- build: ```nim c -d:release --opt:speed mukd.nim```
+
 Changelog
 --------
 
-TODO
-- ~~0.1.0 (First usable version)~~
-
-- 0.0.9 (Prototype)
-  - STUFF
+- 0.1.0 (First usable version)
+- 0.0.1 (Prototype)
 
 Technologie / Credits
 -----------
@@ -121,4 +121,4 @@ Technologie / Credits
 - [x] [illwill](https://github.com/johnnovak/illwill) (terminal library for nim)
 - [x] [illwillWidgets](https://github.com/enthus1ast/illwillWidgets) (widget library for illwill)
 - [x] [mpv/libmpv](https://github.com/mpv-player/mpv) (music/video backend)
-- [ ] ~~[LyricFetcher]()~~ yet to be written :)
+- [ ] [LyricFetcher](https://github.com/enthus1ast/lyricFetcher) (mostly done but not included)
