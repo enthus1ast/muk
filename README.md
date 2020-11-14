@@ -69,7 +69,7 @@ Features
       - [ ] Secure login
   - [x] (gui) local filesystem
   - [x] (gui) remote filesystem -> browse server filesystem from gui
-- [x] One click, up and download, music from client <-> server
+- [x] One click, up and ~~download~~, music from client <-> server
 - [x] Lyric fetcher (not yet intigrated)
 - [x] Cross platform
   - [x] Linux
