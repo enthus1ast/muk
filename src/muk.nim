@@ -3,8 +3,7 @@ var doRender = 0
 var idleSteps = 0
 
 import os, strutils, sequtils, json, parsecfg, tables, uri, asyncdispatch, times
-import illwill, illwillWidgets
-
+import illwill, illwillWidgets, termutils
 import mpv, templates
 import mukc
 import filesys, filesysRemote
@@ -74,6 +73,7 @@ type
     artist: string
     title: string
     path: string
+
 
 proc storeLastSelectedIndex(muk: Muk, path: string, idx: int) =
   muk.lastSelectedIdx[path] = idx
@@ -610,6 +610,8 @@ proc main(host: string = "127.0.0.1", port: int = 8889, username = "foo", passwo
         muk.log("key handled: " & muk.txtSearch.text)
 
     muk.infSongPath.text = muk.renderCurrentSongInfo()
+
+    setTerminalTitle("muk " & muk.renderCurrentSongInfo()) ## TODO not every tick
 
     muk.progSongProgress.value = muk.getProgressInPercent()
     muk.progSongProgress.text = muk.infoCurrentSongDurationSeconds()  #$ctx.getProgressInPercent()
