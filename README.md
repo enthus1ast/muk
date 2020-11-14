@@ -51,7 +51,7 @@ Keyboard Binding
 | Filesystem | {a} | Add song/directory to playlist |
 | Playlist | {d}/~{Del}~ | Remove a song from the playlist |
 | Playlist | {o} | select the song that is played currently |
-| Playlist | ~~??????~~ | Fetch lyrics |
+| Playlist | ~~??????~~ | ~~Fetch lyrics~~ |
 
 
 
@@ -89,6 +89,10 @@ Create (network) users
 ```
 auth add -u username -p password
 ```
+
+Automatic song upload
+---------------------
+when muc is connected to a remote mukd, and you add files from your local filesystem, files are automatically uploaded to the mukd server (if enabled).
 
 Network Protocol
 ----------------
