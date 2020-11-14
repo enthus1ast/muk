@@ -31,8 +31,7 @@ Keyboard Binding
 | BOTH | {ShiftJ, ShifK} | Next/Previous song |
 | BOTH | {Enter} | Play/Open |
 | BOTH | {m} | Mute/Unmute |
-| BOTH | {p} | Pause/Resum |
-| BOTH | {p} | Pause/Resum |
+| BOTH | {p}/{space} | Pause/Resum |
 | BOTH | {r} | Cycle Repeat Modes |
 | BOTH | {v} | Show/Hide video |
 | BOTH | {t} | playlist / filesystem fullscreen |
@@ -41,7 +40,7 @@ Keyboard Binding
 | BOTH | {,} | Local Filesystem|
 | BOTH | {.} | Remote Filesystem|
 | BOTH | {g}/{/}| Search |
-| BOTH | {?}/{F1} | Help |
+| BOTH | ~~{?}/{F1}~~ | ~~Help~~ |
 | BOTH | {ESC} | Exit out of search/help/lyrics etc. |
 | BOTH | left Mouse| highlight, seek, etc. |
 | BOTH | right Mouse| activate (play/add,etc) |
