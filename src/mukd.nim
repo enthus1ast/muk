@@ -409,6 +409,7 @@ proc handleUpload(mukd: Mukd, client: Client) {.async.} =
   of PostUploadAction.Append:
     echo "PostUploadAction.Append"
     mukd.ctx.addToPlaylist(path)
+
   of PostUploadAction.Play:
     echo "PostUploadAction.Play"
     mukd.ctx.addToPlaylistAndPlay(path)
@@ -507,6 +508,7 @@ proc testFanout(mukd: Mukd) {.async.} =
 when isMainModule:
   echo newMsg(Message_Server_AUTH)
   var mukd = newMukd()
+  createDir(getAppDir() / mukd.config.getSectionValue("upload", "uploadFolder"))
   mukd.initMpv()
   # mukd.fs.currentPath = getCurrentDir().absolutePath()
   mukd.loadDefaultPlaylist()
