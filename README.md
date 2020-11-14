@@ -98,7 +98,7 @@ Download / Install
 TODO
 - ~~install via nimble:~~
   - ~~`nimble install muk`~~
-- ~~[linux, windows, macos libraries on the release page]()~~ yet to come
+-  [~~linux~~, windows, ~~macos~~ binaries on the release page](https://github.com/enthus1ast/muk/releases)
 
 Build from source
 -----------------
