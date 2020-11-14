@@ -34,7 +34,9 @@ proc getFanout_PROGRESS(mukd: Mukd): Message_Server_FANOUT =
 proc getFanout_METADATA(mukd: Mukd): Message_Server_FANOUT =
   result = newMsg(Message_Server_FANOUT)
   result.dataKind = FanoutDataKind.METADATA
-  result.data = %* mukd.ctx.getMetadata().normalizeMetadata()
+  var songInfo = mukd.ctx.getMetadata().normalizeMetadata()
+  songInfo.path = mukd.ctx.getSongPath()
+  result.data = %* songInfo
 
 proc getFanout_PAUSE(mukd: Mukd): Message_Server_FANOUT =
   result = newMsg(Message_Server_FANOUT)
