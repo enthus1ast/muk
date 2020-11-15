@@ -306,6 +306,22 @@ proc uploadDoneCb(muk: Muk, path: string) =
   let line = "UPLOAD DONE: " & path
   muk.log(line)
 
+proc uploadFile(muk: Muk, path: string) =
+  proc progCb(path: string, transmitted, size: int) {.closure.} =
+    uploadProgressCb(muk, path, transmitted, size)
+  proc doneCb(path: string) {.closure.} =
+    uploadDoneCb(muk, path)
+  asyncCheck muk.mukc.uploadFile(
+    muk.host,
+    muk.port,
+    muk.username,
+    muk.password,
+    path, # muk.fs.currentPath / muk.filesystem.element(),
+    PostUploadAction.Play,
+    progCb,
+    doneCb
+  )
+
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
     waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
@@ -319,21 +335,7 @@ proc openAction(muk: Muk) =
         if muk.isLocal():
           waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
         else:
-          # TODO this is copy pasta (and add append)
-          proc progCb(path: string, transmitted, size: int) {.closure.} =
-            uploadProgressCb(muk, path, transmitted, size)
-          proc doneCb(path: string) {.closure.} =
-            uploadDoneCb(muk, path)
-          asyncCheck muk.mukc.uploadFile(
-            muk.host,
-            muk.port,
-            muk.username,
-            muk.password,
-            muk.fs.currentPath / muk.filesystem.element(),
-            PostUploadAction.Play,
-            progCb,
-            doneCb
-          )
+          muk.uploadFile(muk.fs.currentPath / muk.filesystem.element())
       of ActionKind.Folder:
         muk.filesystem.choosenidx = 0
         muk.filesystemOpenDir(act.folderPath)
@@ -462,22 +464,8 @@ proc handleKeyboard(muk: Muk, key: var Key) =
       if muk.isLocal:
         waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
       else:
-          # TODO this is copy pasta
           # TODO this only works for files atm, and no progress and nothing... but it works atm :)
-          proc progCb(path: string, transmitted, size: int) {.closure.} =
-            uploadProgressCb(muk, path, transmitted, size)
-          proc doneCb(path: string) {.closure.} =
-            uploadDoneCb(muk, path)
-          asyncCheck muk.mukc.uploadFile(
-            muk.host,
-            muk.port,
-            muk.username,
-            muk.password,
-            muk.fs.currentPath / muk.filesystem.element(),
-            PostUploadAction.Play,
-            progCb,
-            doneCb
-          )
+          muk.uploadFile(muk.fs.currentPath / muk.filesystem.element())
     of FilesystemKind.Remote:
       waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()

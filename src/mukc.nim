@@ -289,7 +289,7 @@ when isMainModule:
     waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\02 - Skyrock.mp3""", postUploadAction = PostUploadAction.Play)
 
 
-  upload("")
+  # upload("")
 
   # proc tst() =
   #   var mukc = newMukc()
