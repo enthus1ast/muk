@@ -14,6 +14,8 @@ type
     control*: Client
     listening*: Client
     running*: bool
+  UploadProgressCb* = proc (path: string, transmitted, size: int) {.closure.}
+  UploadDoneCb* = proc(path: string) {.closure.}
 
 ########################################################
 # High level network controls
@@ -246,8 +248,11 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     cs.fillFanout(fan)
 
 import strutils
+proc procCb(path: string, transmitted, size: int) = discard
+proc doneCb(path: string) = discard
 proc uploadFile*(mukc: Mukc, host: string, port: Port,
-    username, password, path: string, postUploadAction = PostUploadAction.Nothing) {.async.} =
+    username, password, path: string, postUploadAction = PostUploadAction.Nothing,
+    uploadProgressCb: UploadProgressCb = procCb, uploadDoneCb: UploadDoneCb = doneCb) {.async.} =
   var client = await mukc.connectOne(host, port)
   if await client.authenticateOne(username, password):
     await client.purpose(SocketPurpose.Upload)
@@ -267,16 +272,13 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
   var buffer = newStringOfCap(CHUNK_SIZE)
   while true:
     buffer = await fh.read(CHUNK_SIZE)
-    # echo buffer.len
     if buffer == "":
-      # client.kill()
       client.socket.close()
       break
     progress.inc buffer.len
-    # stdout.write
-    # echo progress.formatSize().alignLeft(10) & "/" & msg.uploadInfo.size.formatSize().align(10) # & "\r"
     await client.socket.send(buffer)
-    # stdout.flushFile()
+    uploadProgressCb(path, progress, msg.uploadInfo.size)
+  uploadDoneCb(path)
 
 when isMainModule:
   import cligen
