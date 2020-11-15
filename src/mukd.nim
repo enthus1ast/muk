@@ -401,12 +401,11 @@ proc handleUpload(mukd: Mukd, client: Client) {.async.} =
     client.kill()
     return
 
-  var uploadInfo: UploadInfo
   let path = getAppDir() / mukd.config.getSectionValue("upload", "uploadFolder") / msg.uploadInfo.name
 
   let maxUploadSizeByte =  mukd.config.getSectionValue("upload", "maxUploadSize").parseInt()
-  if uploadInfo.size > maxUploadSizeByte * 1000 * 1000:
-    echo "file size is too large, incoming: ", uploadInfo.size.formatSize(), " maxUploadSize:", maxUploadSizeByte.formatSize()
+  if msg.uploadInfo.size > maxUploadSizeByte * 1000 * 1000:
+    echo "file size is too large, incoming: ", msg.uploadInfo.size.formatSize(), " maxUploadSize:", maxUploadSizeByte.formatSize()
     await client.sendBad()
     client.kill()
     return
@@ -435,7 +434,14 @@ proc handleUpload(mukd: Mukd, client: Client) {.async.} =
     # echo "CHUNK: ", chunk.len
     if chunk == "": break
     await fh.write(chunk)
+    received.inc chunk.len
   fh.close()
+
+  if received != msg.uploadInfo.size:
+    echo "Size do not match, got:", received, " expected:", msg.uploadInfo.size, " path: ", path
+    removeFile(path)
+    return
+
   echo "upload done: ", path
   case msg.postUploadAction
   of PostUploadAction.Nothing:

@@ -119,6 +119,8 @@ Changelog
 - 0.1.1
   - terminal title shows current song
   - server fanouts song path
+  - {Up}/{Down}/{PageUp}/{PageDown} breaks search now
+  - uploadProgress/uploadDone callback (only visible in debug log for now)
 - 0.1.0 (First usable version, with network)
 - 0.0.1 (Prototype)
 

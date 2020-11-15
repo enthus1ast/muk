@@ -261,7 +261,6 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
   msg.postUploadAction = postUploadAction
   var fh = openAsync(path, fmRead)
   msg.uploadInfo = getUploadInfo(fh, path)
-
   await client.send(msg)
   try:
     discard await client.recv(Message_GOOD)
