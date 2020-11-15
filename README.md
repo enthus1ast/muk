@@ -28,7 +28,8 @@ Keyboard Binding
 | BOTH | {h}/{l}/{LEFT}/{RIGHT} | Seek backwards/forwars |
 | BOTH | {ShiftH}/{ShiftL}/{LeftBracket}/{RightBracket}  | Seek backwards/forwars faster |
 | BOTH | {-}/{+} | Volume DOWN/UP |
-| BOTH | {ShiftJ, ShifK} | Next/Previous song |
+| BOTH | {*}, {_} | Move song up / down in playlist |
+| BOTH | {ShiftJ}, {ShifK} | Next/Previous song |
 | BOTH | {Enter} | Play/Open |
 | BOTH | {m} | Mute/Unmute |
 | BOTH | {p} | Pause/Resum |
