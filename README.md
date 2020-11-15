@@ -119,7 +119,7 @@ Changelog
 - 0.1.1
   - terminal title shows current song
   - server fanouts song path
-- 0.1.0 (First usable version)
+- 0.1.0 (First usable version, with network)
 - 0.0.1 (Prototype)
 
 Technologie / Credits

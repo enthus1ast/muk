@@ -46,6 +46,7 @@ type
     txtSearch: TextBox
     progVolume: ProgressBar
 
+
     # Repeat modes
     radGroupRep: RadioBoxGroup
     radRepNone: Checkbox
@@ -223,9 +224,9 @@ proc layout(muk: Muk) =
   muk.txtSearch.y = terminalHeight() - 4
   muk.txtSearch.w = (terminalWidth() div 2) - 3
 
-  muk.progVolume.x = terminalWidth() - 13
+  muk.progVolume.x = terminalWidth() - 14
   muk.progVolume.y = terminalHeight() - 3
-  muk.progVolume.l = 10
+  muk.progVolume.l = 13
 
 
 proc banner(muk: Muk) =
@@ -293,6 +294,18 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
   of FilesystemKind.Remote:
     muk.filesystem.fillFilesystem(muk.fsRemote.ls)
 
+proc uploadProgressCb(muk: Muk, path: string, transmitted, size: int) =
+  let line = transmitted.formatSize().alignLeft(10) &
+   "/" &
+   size.formatSize().align(10) &
+   " " &
+   path
+  muk.log(line)
+
+proc uploadDoneCb(muk: Muk, path: string) =
+  let line = "UPLOAD DONE: " & path
+  muk.log(line)
+
 proc openAction(muk: Muk) =
   if muk.inWidget == InWidget.Playlist:
     waitFor muk.mukc.playlistPlayIndex(muk.playlist.choosenidx)
@@ -307,13 +320,19 @@ proc openAction(muk: Muk) =
           waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
         else:
           # TODO this is copy pasta (and add append)
+          proc progCb(path: string, transmitted, size: int) {.closure.} =
+            uploadProgressCb(muk, path, transmitted, size)
+          proc doneCb(path: string) {.closure.} =
+            uploadDoneCb(muk, path)
           asyncCheck muk.mukc.uploadFile(
             muk.host,
             muk.port,
             muk.username,
             muk.password,
             muk.fs.currentPath / muk.filesystem.element(),
-            PostUploadAction.Play
+            PostUploadAction.Play,
+            progCb,
+            doneCb
           )
       of ActionKind.Folder:
         muk.filesystem.choosenidx = 0
@@ -445,13 +464,19 @@ proc handleKeyboard(muk: Muk, key: var Key) =
       else:
           # TODO this is copy pasta
           # TODO this only works for files atm, and no progress and nothing... but it works atm :)
+          proc progCb(path: string, transmitted, size: int) {.closure.} =
+            uploadProgressCb(muk, path, transmitted, size)
+          proc doneCb(path: string) {.closure.} =
+            uploadDoneCb(muk, path)
           asyncCheck muk.mukc.uploadFile(
             muk.host,
             muk.port,
             muk.username,
             muk.password,
             muk.fs.currentPath / muk.filesystem.element(),
-            PostUploadAction.Play
+            PostUploadAction.Play,
+            progCb,
+            doneCb
           )
     of FilesystemKind.Remote:
       waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
