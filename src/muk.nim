@@ -513,6 +513,16 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukToggleFullscreenWidget:
     muk.fullscreenWidget = not muk.fullscreenWidget
     # muk.doLayout = true
+
+  of MukMoveSongUp:
+    if muk.playlist.choosenIdx - 1 >= 0:
+      waitFor muk.mukc.playlistMove(muk.playlist.choosenIdx , muk.playlist.choosenIdx - 1) # TODO check for minus?
+      muk.playlist.choosenIdx.dec 1
+  of MukMoveSongDown:
+    if muk.playlist.choosenIdx + 1 < muk.playlist.elements.len:
+      waitFor muk.mukc.playlistMove(muk.playlist.choosenIdx , muk.playlist.choosenIdx + 2) # TODO check for max?
+      muk.playlist.choosenIdx.inc 1
+
   else:
     discard
 

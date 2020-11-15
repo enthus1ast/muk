@@ -121,6 +121,7 @@ Changelog
   - server fanouts song path
   - {Up}/{Down}/{PageUp}/{PageDown} breaks search now
   - uploadProgress/uploadDone callback (only visible in debug log for now)
+  - move songs in playlist
 - 0.1.0 (First usable version, with network)
 - 0.0.1 (Prototype)
 

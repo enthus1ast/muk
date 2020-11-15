@@ -146,3 +146,6 @@ proc toggleVideo*(ctx: ptr handle) =
 
 proc loadPlaylist*(ctx: ptr handle, path: string) =
   tryIgnore ctx.command("loadlist", path)
+
+proc playlistMove*(ctx: ptr handle, fromIdx, toIdx: int) =
+  tryIgnore ctx.command(@["playlist-move", $fromIdx, $toIdx])

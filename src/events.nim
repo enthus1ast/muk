@@ -54,3 +54,6 @@ type
     MukAction
 
     MukToggleFullscreenWidget
+
+    MukMoveSongUp
+    MukMoveSongDown

@@ -54,6 +54,11 @@ type
     # FSCD,
     QUIT,
     TOGGLEVIDEO
+    PLAYLISTMOVE
+
+  Control_Client_PLAYLISTMOVE* = object
+    fromIdx*: int
+    toIdx*: int
 
   Control_Client_FSLS* = string
   Control_Client_FSACTION* = string

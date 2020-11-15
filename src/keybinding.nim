@@ -76,6 +76,10 @@ proc defaultKeybindingPlaylist*(): Keybinding =
   result[Key.D] = MukRemoveSong
   result[Key.O] = MukSelectCurrentSongPlaylist
 
+  result[Key.Asterisk] = MukMoveSongUp
+  result[Key.Underscore] = MukMoveSongDown
+
+
 
 proc defaultKeybindingFilesystem*(): Keybinding =
   result = defaultKeybindingGlobal()

@@ -127,6 +127,15 @@ proc toggleVideo*(mukc: Mukc) {.async.} =
   msg.data = %* nil
   await mukc.control.send(msg)
 
+proc playlistMove*(mukc: Mukc, fromIdx, toIdx: int) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.PLAYLISTMOVE
+  msg.data = %* Control_Client_PLAYLISTMOVE(
+    fromIdx: fromIdx,
+    toIdx: toIdx
+  )
+  await mukc.control.send(msg)
+
 ########################################################
 # Remote filesystem
 ########################################################

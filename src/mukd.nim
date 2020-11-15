@@ -382,6 +382,12 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       # # await client.send(answer)
       # # answer.controlKind = FSLS
       # await client.send(answer)
+    of PLAYLISTMOVE:
+      let incoming = msg.data.to(Control_Client_PLAYLISTMOVE)
+      mukd.ctx.playlistMove(incoming.fromIdx, incoming.toIdx)
+      mukd.saveDefaultPlaylist()
+      var fan = mukd.getFanout_PLAYLIST()
+      await mukd.fanout(fan)
     else:
       discard
 
