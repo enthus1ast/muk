@@ -92,6 +92,10 @@ proc defaultKeybindingFilesystem*(): Keybinding =
 proc defaultKeybindingSearch*(): Keybinding =
   result[Key.Escape] = MukSearchCancel
   result[Key.Enter] = MukSearchDone
+  result[Key.Up] = MukSearchDone
+  result[Key.Down] = MukSearchDone
+  result[Key.PageUp] = MukSearchDone
+  result[Key.PageDown] = MukSearchDone
 
 proc toMukEvent*(keybinding: Keybinding, key: Key): MukEvent =
   return keybinding.getOrDefault(key, MukUnknown)
