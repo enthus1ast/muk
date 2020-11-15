@@ -109,7 +109,12 @@ proc newMuk(): Muk =
 
   # TODO The layout IS this values are overwritten done in "layout()"
   result.filesystem = newChooseBox(@[], 1, 1, (terminalWidth() div 2) - 2, terminalHeight() - 5, color = fgGreen )
+
   result.playlist = newChooseBox(@[],  terminalWidth() div 2, 1, terminalWidth() div 2, terminalHeight() - 5 , color = fgGreen)
+  result.playlist.colorBoth = fgBlue
+  result.playlist.bgcolorBoth = bgGreen
+
+
   result.infSongPath = newInfoBox("", 0, terminalHeight() - 2, terminalWidth(), 1)
 
   result.progSongProgress = newProgressBar("", 2, terminalHeight() - 1, terminalWidth() - 2, 0.0, 100.0, bgTodo = bgBlack)
