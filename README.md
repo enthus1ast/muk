@@ -123,6 +123,7 @@ Changelog
   - {Up}/{Down}/{PageUp}/{PageDown} breaks search now
   - uploadProgress/uploadDone callback (only visible in debug log for now)
   - move songs in playlist
+  - playlist items have special color when is selected AND is playing
 - 0.1.0 (First usable version, with network)
 - 0.0.1 (Prototype)
 
