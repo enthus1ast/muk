@@ -111,7 +111,6 @@ proc newMuk(): Muk =
   result.playlist.colorBoth = fgBlue
   result.playlist.bgcolorBoth = bgGreen
 
-
   result.infSongPath = newInfoBox("", 0, terminalHeight() - 2, terminalWidth(), 1)
 
   result.progSongProgress = newProgressBar("", 2, terminalHeight() - 1, terminalWidth() - 2, 0.0, 100.0, bgTodo = bgBlack)

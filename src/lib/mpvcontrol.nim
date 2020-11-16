@@ -80,6 +80,8 @@ proc playlistPlayIndex*(ctx: ptr handle, index: int) =
   tryIgnore ctx.set_property("playlist-pos", $index)
   # tryIgnore ctx.command(@["playlist-start", $index]) # for older mpv versions ???
 
+proc getPlaylistPlayIndex*(ctx: ptr handle): int =
+  tryIgnore: result = ctx.get_property("playlist-pos")
 
 proc nextFromPlaylist*(ctx: ptr handle) =
   tryIgnore ctx.command("playlist-next")
@@ -117,6 +119,9 @@ proc getProgressInPercent*(ctx: ptr handle): float =
 
 proc getTimePos*(ctx: ptr handle): float =
   tryIgnore: result = parseFloat(ctx.get_property("time-pos"))
+
+proc setTimePos*(ctx: ptr handle, timePos: float) =
+  tryIgnore ctx.set_property("time-pos", $timePos)
 
 proc getDuration*(ctx: ptr handle): float =
   tryIgnore: result = parseFloat(ctx.get_property("duration"))

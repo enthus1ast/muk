@@ -229,14 +229,6 @@ proc initialInformListening(mukd: Mukd, client: Client) {.async.} =
 
 
 
-#  tryIgnore:
-#     fan = newMsg(Message_Server_FANOUT)
-#     fan.data = %* mukd.ctx.()
-#     await mukd.fanout(fan)
-
-
-
-
 proc handleListening(mukd: Mukd, client: Client) {.async.} =
   dbg "Handle listening"
   mukd.listening.incl client
@@ -247,7 +239,6 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
   dbg "Create a filesystem for the controlling client"
   mukd.clientFs[client] = newFilesystem()
   while mukd.running:
-
     var msg: Message_Client_CONTROL
     try:
       msg = await client.recv(Message_Client_CONTROL)
