@@ -1,5 +1,5 @@
 import asyncfile, asyncdispatch, os, strutils
-import tuploadInfo
+import ../types/tuploadInfo
 
 const
   CHUNK_SIZE* = 4096 * 8

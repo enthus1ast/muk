@@ -1,17 +1,10 @@
 ## This is the muk server part.
-import net, asyncnet, asyncdispatch, json, strutils, os, tables, asyncfile
-import dbg
-import mpv
-import sets
-import hashes
-import messages, network
-import mpvcontrol
-import templates
-import parsecfg
-import filesys
+
+import net, asyncnet, asyncdispatch, json, strutils, os, tables, asyncfile,
+  dbg, mpv, sets, hashes, parsecfg
+import lib/[network, mpvcontrol, filesys, templates]
+import types/[tmessages, tsonginfo, trepeatKind, tuploadInfo, tmukd]
 import auth
-import tsonginfo, trepeatKind, tuploadInfo
-import tmukd
 
 # from fileUpload import CHUNK_SIZE
 
@@ -120,9 +113,9 @@ proc newMukd(): Mukd =
   result.running = true
   result.server = newAsyncSocket()
   result.server.setSockOpt(OptReuseAddr, true)
-  result.config = loadConfig(getAppDir() / "mukd.ini")
+  result.config = loadConfig(getAppDir() / "config/mukd.ini")
   result.allowedUploadExtensions = result.config.getSectionValue("upload", "allowedExtensions").enumerationToSet()
-  result.users = loadUsers(getAppDir() / "users.db")
+  result.users = loadUsers(getAppDir() / "config/users.db")
   # result.fs = newFilesystem()
 
 proc setMpvOptions(mukd: Mukd) =

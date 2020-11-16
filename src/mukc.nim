@@ -1,5 +1,8 @@
-import messages, network, dbg, asyncnet, json, filesys, asyncfile, fileupload
-import tsonginfo, tplaylist, trepeatKind
+# this is muk's client library and stand alone tool remote controlling mukd
+
+import dbg, asyncnet, json, asyncfile
+import lib/[network, filesys, fileupload]
+import types/[tmessages, tsonginfo, tplaylist, trepeatKind]
 
 type
   ClientStatus* = ref object
@@ -291,7 +294,7 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
 when isMainModule:
   import cligen
 
-  import fileUpload
+  import lib/fileUpload
   proc upload(file: string) =
     var mukc = newMukc()
     waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\01 - Magic Brush.mp3""")

@@ -1,6 +1,7 @@
 from filesys import ActionKind, Action
 import asyncdispatch
-import mukc, messages
+import ../mukc
+import ../types/tmessages
 
 type
   FilesystemRemote* = ref object

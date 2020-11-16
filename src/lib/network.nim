@@ -1,5 +1,5 @@
-import json, asyncdispatch, asyncnet, net, strutils, hashes
-import messages, dbg
+import json, asyncdispatch, asyncnet, net, strutils, hashes, dbg
+import ../types/tmessages
 
 export asyncdispatch
 export asyncnet

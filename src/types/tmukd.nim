@@ -1,7 +1,8 @@
-import sets, mpv, network, parsecfg, tables, auth
-import filesys
-import trepeatKind
-import tmukdstatus
+import sets, mpv, parsecfg, tables
+import ../lib/[filesys, network]
+import ../types/[trepeatKind, tmukdstatus]
+import ../auth
+
 type
   Mukd* = ref object
     server*: AsyncSocket

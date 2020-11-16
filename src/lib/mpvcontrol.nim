@@ -1,7 +1,6 @@
 import templates, json, strutils
 import mpv
-import tsonginfo
-import tplaylist
+import ../types/[tsonginfo, tplaylist]
 
 proc getSongTitle*(ctx: ptr handle): string =
   tryIgnore: result = ctx.get_property("media-title")

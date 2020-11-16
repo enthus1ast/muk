@@ -1,17 +1,14 @@
+## This is the tui music player "muk"
+
 ## https://github.com/mpv-player/mpv/blob/master/etc/input.conf
 var doRender = 0
 var idleSteps = 0
 
 import os, strutils, sequtils, json, parsecfg, tables, uri, asyncdispatch, times
-import illwill, illwillWidgets, termutils
-import mpv, templates
+import illwill, illwillWidgets, mpv
 import mukc
-import filesys, filesysRemote
-import mpvcontrol
-import network, messages
-import tplaylist
-import trepeatKind
-import keybinding, events
+import lib/[network, mpvcontrol, filesys, filesysRemote, templates, keybinding, events, termutils]
+import types/[tmessages, tplaylist, trepeatKind]
 
 type
   InWidget {.pure.} = enum
@@ -93,7 +90,7 @@ proc isLocal*(muk: Muk): bool =
 
 proc newMuk(): Muk =
   result = Muk()
-  result.config = loadConfig(getAppDir() / "config.ini")
+  result.config = loadConfig(getAppDir() / "config/config.ini")
   result.mukc = newMukc()
   ## TODO this must be in an async proc not in newMuk
   result.cs = ClientStatus()

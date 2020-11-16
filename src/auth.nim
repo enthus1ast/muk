@@ -1,3 +1,5 @@
+# this is mukd user manager library and stand alone tool for manage mukd network users
+
 import securehash, tables, json, os
 const SALT = "mukusertablefoobaa"
 type
@@ -47,7 +49,7 @@ proc addUser*(path, username, password: string) =
 when isMainModule:
   import cligen
   proc add(username: string, password: string): int =
-    addUser("users.db", username, password)
+    addUser("config/users.db", username, password)
     return 0
   dispatchMulti([auth.add])
 

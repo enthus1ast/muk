@@ -1,9 +1,9 @@
 *.exe
 src/uploads/*
 private/*
-src/users.db
-src/mpvlogfile.txt
-src/playlist.list
+src/config/users.db
+src/tmp/*
 .vscode/*
 release/*
 src/muk
+
