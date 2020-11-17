@@ -293,6 +293,7 @@ proc filesystemOpenDir(muk: Muk, dir: string) =
     muk.fs.currentPath = dir
     muk.filesystem.fillFilesystem(muk.fs.ls)
   of FilesystemKind.Remote:
+    # TODO remote fs needs cd command
     muk.filesystem.fillFilesystem(muk.fsRemote.ls)
 
 proc uploadProgressCb(muk: Muk, path: string, transmitted, size: int) =
@@ -432,15 +433,17 @@ proc handleKeyboard(muk: Muk, key: var Key) =
   of MukDownFastFilesystem:
     muk.filesystem.nextChoosenidx(10)
     muk.storeLastSelectedIndex(muk.fs.currentPath, muk.filesystem.choosenidx)
-  of MukToMusicDir1:
-    muk.filesystemOpenDir(muk.musikDir1)
-    muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
-  of MukToMusicDir2:
-    muk.filesystemOpenDir(muk.musikDir2)
-  of MukToMusicDir3:
-    muk.filesystemOpenDir(muk.musikDir3)
-  of MukToMusicDir4:
-    muk.filesystemOpenDir(muk.musikDir4)
+  of MukToMusicDir1, MukToMusicDir2, MukToMusicDir3, MukToMusicDir4:
+    let num = ($($mev)[^1]).parseInt() ## TODO
+    case muk.filesystemKind
+    of FilesystemKind.Local:
+      # muk.filesystemOpenDir(muk.musikDir1)
+      muk.filesystemOpenDir(muk.config.getSectionValue("musicDirs", "musicDir" & $num ))
+      muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
+    of FilesystemKind.Remote:
+      waitFor muk.mukc.remoteFsGotomusicdir(num)
+      muk.filesystemOpenDir(muk.fsRemote.currentPath)
+
   of MukShuffle:
     # muk.ctx.command("playlist-shuffle")
     discard # TODO
@@ -453,10 +456,12 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     case muk.filesystemKind
     of FilesystemKind.Local:
       muk.fs.up()
+      muk.filesystemOpenDir(muk.fs.currentPath) # TODO why is this just local??
     of FilesystemKind.Remote:
       muk.fsRemote.up()
+      muk.filesystemOpenDir(muk.fsRemote.currentPath) # TODO why is this just local??
+
     # muk.filesystem.choosenidx = 0
-    muk.filesystemOpenDir(muk.fs.currentPath)
     muk.filesystem.choosenidx = muk.getLastSelectedIndex(muk.fs.currentPath)
     muk.filesystem.filter = ""
   of MukAddStuff:

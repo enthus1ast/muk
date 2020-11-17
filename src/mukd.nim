@@ -2,7 +2,7 @@
 
 import net, asyncnet, asyncdispatch, json, strutils, os, tables, asyncfile,
   dbg, mpv, sets, hashes, parsecfg
-import lib/[network, mpvcontrol, filesys, templates]
+import lib/[network, mpvcontrol, filesys, templates, mukdstatus]
 import types/[tmessages, tsonginfo, trepeatKind, tuploadInfo, tmukd]
 import auth
 
@@ -12,9 +12,19 @@ const
   PORT = 8889.Port
   BIND_ADDR = "0.0.0.0"
 
+proc storeDefaultMukdStatus(mukd: Mukd) =
+  ## Writes the status to de filesystem.
+  echo "Store mukd status."
+  storeMukdStatus(mukd.getMukdStatus(), getAppDir() / "tmp/status.json")
+
+proc applyDefaultMukdStatus(mukd: Mukd) =
+  ## Writes the status to de filesystem.
+  # tryIgnore:
+  let status = loadMukdStatus(getAppDir() / "tmp/status.json")
+  mukd.applyMukdStatus(status)
+  echo "Apply mukd status."
 
 ### High level mpv control #############################################
-
 proc getFanout_PROGRESS(mukd: Mukd): Message_Server_FANOUT =
   result = newMsg(Message_Server_FANOUT)
   result.dataKind = FanoutDataKind.PROGRESS
@@ -116,7 +126,6 @@ proc newMukd(): Mukd =
   result.config = loadConfig(getAppDir() / "config/mukd.ini")
   result.allowedUploadExtensions = result.config.getSectionValue("upload", "allowedExtensions").enumerationToSet()
   result.users = loadUsers(getAppDir() / "config/users.db")
-  # result.fs = newFilesystem()
 
 proc setMpvOptions(mukd: Mukd) =
   ## Forwards the [mpv] part of mukd.ini directly to libmpv
@@ -237,7 +246,7 @@ proc handleListening(mukd: Mukd, client: Client) {.async.} =
 proc handleControl(mukd: Mukd, client: Client) {.async.} =
   dbg "Handle control"
   dbg "Create a filesystem for the controlling client"
-  mukd.clientFs[client] = newFilesystem()
+  mukd.clientFs[client] = newFilesystem(mukd.config.getSectionValue("musicDirs", "musicDir1"))
   while mukd.running:
     var msg: Message_Client_CONTROL
     try:
@@ -278,6 +287,7 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.setPause(msg.data.to(Control_Client_PAUSE))
       var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
+      mukd.storeDefaultMukdStatus()
     of TOGGLEPAUSE:
       # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       discard mukd.ctx.togglePause()
@@ -286,11 +296,13 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       fan = newMsg(Message_Server_FANOUT)
       fan.data = %* mukd.getFanout_PROGRESS()
       await mukd.fanout(fan)
+      mukd.storeDefaultMukdStatus()
     of TOGGLEMUTE:
       # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       discard mukd.ctx.toggleMute()
       var fan = mukd.getFanout_MUTE() # TODO
       await mukd.fanout(fan)
+      mukd.storeDefaultMukdStatus()
       # fan = newMsg(Message_Server_FANOUT)
       # fan.data = %* mukd.ctx.getProgressInPercent()
       # await mukd.fanout(fan)
@@ -298,10 +310,12 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.volumeRelative(msg.data.to(Control_Client_VOLUMERELATIV))
       var fan = mukd.getFanout_VOLUME() # TODO
       await mukd.fanout(fan)
+      mukd.storeDefaultMukdStatus()
     of VOLUMEPERCENT:
       mukd.ctx.setVolume(msg.data.to(Control_Client_VOLUMEPERCENT))
       var fan = mukd.getFanout_VOLUME() # TODO
       await mukd.fanout(fan)
+      mukd.storeDefaultMukdStatus()
     of PLAYINDEX:
       mukd.ctx.playlistPlayIndex(msg.data.to(Control_Client_PLAYINDEX))
     of NEXTSONG:
@@ -372,6 +386,22 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.saveDefaultPlaylist()
       var fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
+    of GOTOMUSICDIR:
+      # mukd.config.getSectionValue("musicDirs", "musicDir1")
+      let incoming = msg.data.to(Control_Client_GOTOMUSICDIR)
+      try:
+        let musicDir = mukd.config.getSectionValue("musicDirs", "musicDir" & $incoming).absolutePath()
+        echo musicDir
+        mukd.clientFs[client].currentPath = musicDir
+        # discard mukd.clientFs[client].action(musicDir)
+      except:
+        echo "Music dir not found: " & "musicDir" & $incoming
+        continue
+      # var answer = mukd.getControl_FSLS(client)
+      # await client.send(answer)
+
+      # var fan = mukd.getFanout_PLAYLIST()
+      # await mukd.fanout(fan)
     else:
       discard
 
@@ -487,6 +517,13 @@ proc handleClient(mukd: Mukd, client: Client) {.async.} =
       mukd.clientFs.del(client)
     discard
 
+proc writeMukdStatusLoop(mukd: Mukd) {.async.} =
+  ## periodically write mukd status
+  while true:
+    if not mukd.ctx.getPause():
+      mukd.storeDefaultMukdStatus()
+    await sleepAsync 5_000
+
 proc serve(mukd: Mukd) {.async.} =
   mukd.server.bindAddr(PORT, BIND_ADDR)
   mukd.server.listen()
@@ -552,8 +589,9 @@ when isMainModule:
   mukd.initMpv()
   # mukd.fs.currentPath = getCurrentDir().absolutePath()
   mukd.loadDefaultPlaylist()
+  mukd.applyDefaultMukdStatus()
 
-
+  asyncCheck mukd.writeMukdStatusLoop()
   asyncCheck mukd.fanoutMpvEvents()
   asyncCheck mukd.testFanout()
   waitFor mukd.serve()

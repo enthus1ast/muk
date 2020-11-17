@@ -52,6 +52,9 @@ proc setPause*(ctx: ptr handle, pause: bool) =
 proc getMute*(ctx: ptr handle): bool =
   tryIgnore: result = ctx.get_property("mute").parseBool()
 
+proc setMute*(ctx: ptr handle, mute: bool) =
+  tryIgnore: ctx.set_property("mute", $mute)
+
 proc toggleMute*(ctx: ptr handle): bool =
   tryIgnore:
     ctx.command(@["cycle", "mute"])
@@ -81,7 +84,7 @@ proc playlistPlayIndex*(ctx: ptr handle, index: int) =
   # tryIgnore ctx.command(@["playlist-start", $index]) # for older mpv versions ???
 
 proc getPlaylistPlayIndex*(ctx: ptr handle): int =
-  tryIgnore: result = ctx.get_property("playlist-pos")
+  tryIgnore: result = ctx.get_property("playlist-pos").parseInt()
 
 proc nextFromPlaylist*(ctx: ptr handle) =
   tryIgnore ctx.command("playlist-next")

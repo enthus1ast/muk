@@ -168,6 +168,15 @@ proc remoteFsAction*(mukc: Mukc, action: string): Future[Action] {.async.} =
 
   # return answ.data.to(Control_Server_FSLS)
 
+# proc remoteFsGotomusicdir*(mukc: Mukc, cnt: int): Future[Control_Server_FSLS] {.async.} =
+proc remoteFsGotomusicdir*(mukc: Mukc, cnt: int) {.async.} =
+  var msg = newMsg Message_Client_CONTROL
+  msg.controlKind = Control_Kind.GOTOMUSICDIR
+  msg.data = %* cnt.Control_Client_GOTOMUSICDIR
+  await mukc.control.send(msg)
+  # let answ = await mukc.control.recv(Message_Server_CONTROL)
+  # return answ.data.to(Control_Server_FSLS)
+
 ########################################################
 # Client stuff
 ########################################################

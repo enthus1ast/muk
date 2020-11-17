@@ -4,4 +4,6 @@ type
     ## Status to the filesystem, to load it on mukd restart
     currentSongIdx*: int
     pause*: bool
-    timPos*: float
+    timePos*: float
+    volume*: float
+    mute*: bool

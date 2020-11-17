@@ -53,8 +53,9 @@ type
     FSUP,
     # FSCD,
     QUIT,
-    TOGGLEVIDEO
-    PLAYLISTMOVE
+    TOGGLEVIDEO,
+    PLAYLISTMOVE,
+    GOTOMUSICDIR
 
   Control_Client_PLAYLISTMOVE* = object
     fromIdx*: int
@@ -69,6 +70,8 @@ type
     currentPath*: string
   # Control_Server_ACTION* = nil # TODO ?
 
+
+  Control_Client_GOTOMUSICDIR* = int
   Control_Client_REMOVESONG* = int
   Control_Client_SEEKRELATIVE* = float
   Control_Client_VOLUMERELATIV* = float
