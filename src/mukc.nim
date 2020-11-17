@@ -1,6 +1,6 @@
 # this is muk's client library and stand alone tool remote controlling mukd
 
-import dbg, asyncnet, json, asyncfile
+import dbg, asyncnet, json, asyncfile, strutils
 import lib/[network, filesys, fileupload]
 import types/[tmessages, tsonginfo, tplaylist, trepeatKind]
 
@@ -268,7 +268,6 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
     await mukc.listening.sendGood()
     cs.fillFanout(fan)
 
-import strutils
 proc procCb(path: string, transmitted, size: int) = discard
 proc doneCb(path: string) = discard
 proc uploadFile*(mukc: Mukc, host: string, port: Port,
@@ -287,7 +286,6 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
     discard await client.recv(Message_GOOD)
   except:
     return
-
   var progress = 0
   var buffer = newStringOfCap(CHUNK_SIZE)
   while true:
@@ -302,16 +300,13 @@ proc uploadFile*(mukc: Mukc, host: string, port: Port,
 
 when isMainModule:
   import cligen
-
   import lib/fileUpload
   proc upload(file: string) =
     var mukc = newMukc()
     waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\01 - Magic Brush.mp3""")
     waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\02 - Skyrock.mp3""", postUploadAction = PostUploadAction.Play)
 
-
   # upload("")
-
   # proc tst() =
   #   var mukc = newMukc()
   #   var cs = ClientStatus()

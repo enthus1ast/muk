@@ -4,9 +4,6 @@ import ../types/tuploadInfo
 const
   CHUNK_SIZE* = 4096 * 8
 
-
-    # checksum: string
-
 proc getUploadInfo*(fh: AsyncFile, path: string): UploadInfo =
   result = UploadInfo()
   result.size = fh.getFileSize().int
@@ -16,7 +13,6 @@ iterator chunkFile*(fh: AsyncFile): Chunk =
   var buffer = newStringOfCap(CHUNK_SIZE)
   while true:
     buffer = waitFor fh.read(CHUNK_SIZE)
-    # echo buffer.len
     if buffer == "": break
     yield buffer
 

@@ -269,12 +269,6 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE).normalizedPath().replace("\\", "/"))
       mukd.saveDefaultPlaylist()
       var fan = newMsg(Message_Server_FANOUT)
-      # mukd.savePlaylist # TODO
-      ## This only works after mpv has loaded the files etc, so this can only be fanouted after the mpv event
-      # var songInfo: SongInfo = mukd.ctx.getMetadata().normalizeMetadata()
-      # songInfo.path = mukd.ctx.getSongPath()
-      # fan.data = %* songInfo # {$LOADFILE: msg.data.getStr()}
-      # fan.data = %* {$LOADFILE: msg.data.getStr()}
       fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of LOADFILEAPPEND:
@@ -289,7 +283,6 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       await mukd.fanout(fan)
       mukd.storeDefaultMukdStatus()
     of TOGGLEPAUSE:
-      # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       discard mukd.ctx.togglePause()
       var fan = mukd.getFanout_PAUSE()
       await mukd.fanout(fan)
@@ -298,14 +291,10 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       await mukd.fanout(fan)
       mukd.storeDefaultMukdStatus()
     of TOGGLEMUTE:
-      # mukd.ctx.loadFile(msg.data.to(Control_Client_LOADFILE))
       discard mukd.ctx.toggleMute()
       var fan = mukd.getFanout_MUTE() # TODO
       await mukd.fanout(fan)
       mukd.storeDefaultMukdStatus()
-      # fan = newMsg(Message_Server_FANOUT)
-      # fan.data = %* mukd.ctx.getProgressInPercent()
-      # await mukd.fanout(fan)
     of VOLUMERELATIV:
       mukd.ctx.volumeRelative(msg.data.to(Control_Client_VOLUMERELATIV))
       var fan = mukd.getFanout_VOLUME() # TODO
@@ -354,18 +343,6 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       let incoming = msg.data.to(Control_Client_FSACTION)
       var act = mukd.clientFs[client].action(incoming)
       await client.send(mukd.getControl_ACTION(act))
-      # case act.kind
-      # of ActionKind.File:
-      #   discard
-      #   mukd.ctx.addToPlaylistAndPlay(mukd.fs.currentPath /  incoming )
-      #   var answer = mukd.getControl_ACTION()
-      #   await client.send(answer)
-      # of ActionKind.Folder:
-      #   var answer = mukd.getControl_FSLS()
-      #   await client.send(answer)
-      # else:
-      #   var answer = mukd.getControl_ACTION()
-      #   await client.send(answer)
     of FSUP:
       mukd.clientFs[client].up()
       var answer = mukd.getControl_FSLS(client)
@@ -387,21 +364,14 @@ proc handleControl(mukd: Mukd, client: Client) {.async.} =
       var fan = mukd.getFanout_PLAYLIST()
       await mukd.fanout(fan)
     of GOTOMUSICDIR:
-      # mukd.config.getSectionValue("musicDirs", "musicDir1")
       let incoming = msg.data.to(Control_Client_GOTOMUSICDIR)
       try:
         let musicDir = mukd.config.getSectionValue("musicDirs", "musicDir" & $incoming).absolutePath()
         echo musicDir
         mukd.clientFs[client].currentPath = musicDir
-        # discard mukd.clientFs[client].action(musicDir)
       except:
         echo "Music dir not found: " & "musicDir" & $incoming
         continue
-      # var answer = mukd.getControl_FSLS(client)
-      # await client.send(answer)
-
-      # var fan = mukd.getFanout_PLAYLIST()
-      # await mukd.fanout(fan)
     else:
       discard
 
