@@ -309,6 +309,12 @@ proc uploadDoneCb(muk: Muk, path: string) =
   muk.log(line)
 
 proc uploadFile(muk: Muk, path: string) =
+  if dirExists(path):
+    muk.log("Dir upload not supported ATM, sorry.")
+    return
+  if not fileExists(path):
+    muk.log("File does not exists: " & path)
+    return
   proc progCb(path: string, transmitted, size: int) {.closure.} =
     uploadProgressCb(muk, path, transmitted, size)
   proc doneCb(path: string) {.closure.} =
@@ -471,7 +477,10 @@ proc handleKeyboard(muk: Muk, key: var Key) =
         waitFor muk.mukc.loadRemoteFile(muk.fs.currentPath / muk.filesystem.element(), append = true)
       else:
           # TODO this only works for files atm, and no progress and nothing... but it works atm :)
-          muk.uploadFile(muk.fs.currentPath / muk.filesystem.element())
+          try:
+            muk.uploadFile(muk.fs.currentPath / muk.filesystem.element())
+          except:
+            muk.log("Could not upload: " & muk.fs.currentPath / muk.filesystem.element() )
     of FilesystemKind.Remote:
       waitFor muk.mukc.loadRemoteFile(muk.fsRemote.currentPath / muk.filesystem.element(), append = true)
     muk.filesystem.nextChoosenidx()

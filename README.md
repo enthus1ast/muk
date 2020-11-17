@@ -78,7 +78,7 @@ Features
   - [ ] ~~Macos~~ (low priority; need testers; will not provide binaries; if you like muk build it yourself; sorry)
   - [x] ssh, tmux (no mouse support), etc..
 - [x] Video support when running on a window manager
-- [x] mouse support (partial ATM)
+- [x] mouse support (partial and buggy ATM)
 - [ ] ~~music library~~ (low priority, you have a clean music folder right? ;)
 - [x] custom keybindings (requires recompilation ATM)
 - [ ] custom colorscheme (low priority)
