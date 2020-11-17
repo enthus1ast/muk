@@ -43,7 +43,6 @@ type
     txtSearch: TextBox
     progVolume: ProgressBar
 
-
     # Repeat modes
     radGroupRep: RadioBoxGroup
     radRepNone: Checkbox
@@ -319,7 +318,7 @@ proc uploadFile(muk: Muk, path: string) =
     uploadProgressCb(muk, path, transmitted, size)
   proc doneCb(path: string) {.closure.} =
     uploadDoneCb(muk, path)
-  asyncCheck muk.mukc.uploadFile(
+  asyncCheck uploadFile(
     muk.host,
     muk.port,
     muk.username,

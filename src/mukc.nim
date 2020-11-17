@@ -187,14 +187,14 @@ proc newMukc*(): Mukc =
   result.control = Client() # TODO call this Remote
   result.listening = Client() # TODO call this Remote
 
-proc connectOne*(mukc: Mukc, host: string, port: Port): Future[Client] {.async.} =
+proc connectOne*(host: string, port: Port): Future[Client] {.async.} =
   result = newClient(host, await asyncnet.dial(host, port))
 
 proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
   ## Connect to a mukd. Returns false if connection is not possible
   try:
-    mukc.control = await mukc.connectOne(host, port)
-    mukc.listening = await mukc.connectOne(host, port)
+    mukc.control = await connectOne(host, port)
+    mukc.listening = await connectOne(host, port)
     return true
   except:
     dbg "Could not connect to host: " & host & ":" & $port
@@ -270,10 +270,10 @@ proc collectFanouts*(mukc: Mukc, cs: ClientStatus) {.async.} =
 
 proc procCb(path: string, transmitted, size: int) = discard
 proc doneCb(path: string) = discard
-proc uploadFile*(mukc: Mukc, host: string, port: Port,
+proc uploadFile*(host: string, port: Port,
     username, password, path: string, postUploadAction = PostUploadAction.Nothing,
     uploadProgressCb: UploadProgressCb = procCb, uploadDoneCb: UploadDoneCb = doneCb) {.async.} =
-  var client = await mukc.connectOne(host, port)
+  var client = await connectOne(host, port)
   if await client.authenticateOne(username, password):
     await client.purpose(SocketPurpose.Upload)
   else: return
@@ -303,8 +303,8 @@ when isMainModule:
   import lib/fileUpload
   proc upload(file: string) =
     var mukc = newMukc()
-    waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\01 - Magic Brush.mp3""")
-    waitFor mukc.uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\02 - Skyrock.mp3""", postUploadAction = PostUploadAction.Play)
+    waitFor uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\01 - Magic Brush.mp3""")
+    waitFor uploadFile("127.0.0.1", 8889.Port, "foo", "baa", """C:\Users\david\Music\2004 - Utopia City\02 - Skyrock.mp3""", postUploadAction = PostUploadAction.Play)
 
   # upload("")
   # proc tst() =
