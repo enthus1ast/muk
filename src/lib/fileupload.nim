@@ -1,4 +1,4 @@
-import asyncfile, asyncdispatch, os, strutils
+import asyncfile, asyncdispatch, os
 import ../types/tuploadInfo
 
 const

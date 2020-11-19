@@ -197,8 +197,7 @@ proc connect*(mukc: Mukc, host: string, port: Port): Future[bool] {.async.} =
     mukc.listening = await connectOne(host, port)
     return true
   except:
-    dbg "Could not connect to host: " & host & ":" & $port
-    dbg getCurrentExceptionMsg()
+    echo "Could not connect to host: " & host & ":" & $port
     return false
 
 proc purpose*(client: Client, purpose: SocketPurpose) {.async.} =
@@ -234,13 +233,12 @@ proc authenticate*(mukc: Mukc, username, password: string): Future[bool] {.async
     return false
 
 
-proc recvFanout(mukc: Mukc) {.async.} =
-  var st = 0
-  while true:
-    let msg = await mukc.listening.recv(Message_Server_Fanout)
-    when isMainModule:
-      echo msg
-    await mukc.listening.sendGood()
+# proc recvFanout(mukc: Mukc) {.async.} =
+#   while true:
+#     let msg = await mukc.listening.recv(Message_Server_Fanout)
+#     when isMainModule:
+#       echo msg
+#     await mukc.listening.sendGood()
 
 proc fillFanout(cs: ClientStatus, fan: Message_Server_FANOUT) =
   ## TODO this by hand is cumbersome, write a macro that does this

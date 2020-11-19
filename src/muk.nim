@@ -1,13 +1,13 @@
 ## This is the tui music player "muk"
 
 ## https://github.com/mpv-player/mpv/blob/master/etc/input.conf
-var doRender = 0
+# var doRender = 0
 var idleSteps = 0
 
-import os, strutils, sequtils, json, parsecfg, tables, uri, asyncdispatch, times
-import illwill, illwillWidgets, mpv
+import os, strutils, parsecfg, tables, asyncdispatch, times
+import illwill, illwillWidgets
 import mukc
-import lib/[network, mpvcontrol, filesys, filesysRemote, templates, keybinding, events, termutils]
+import lib/[network, filesys, filesysRemote, templates, keybinding, events, termutils]
 import types/[tmessages, tplaylist, trepeatKind]
 
 type
@@ -65,11 +65,11 @@ type
     musikDir3: string
     musikDir4: string
 
-  SongInfo = object ## Normalized song information (mpv gives json)
-    album: string
-    artist: string
-    title: string
-    path: string
+  # SongInfo = object ## Normalized song information (mpv gives json)
+  #   album: string
+  #   artist: string
+  #   title: string
+  #   path: string
 
 
 proc storeLastSelectedIndex(muk: Muk, path: string, idx: int) =
@@ -155,13 +155,14 @@ proc newMuk(): Muk =
   result.infLog = newInfoBox("logbox", terminalWidth() div 3, 1, terminalWidth() div 3, 10)
   result.infLog.wrapMode = WrapMode.Char
 
-  illwillInit(fullScreen = true, mouse = true)
-  hideCursor()
-
   result.tb = newTerminalBuffer(terminalWidth(), terminalHeight())
   result.keybindingPlaylist = defaultKeybindingPlaylist()
   result.keybindingFilesystem = defaultKeybindingFilesystem()
   result.keybindingSearch = defaultKeybindingSearch()
+
+proc initTui(muk: Muk) =
+  illwillInit(fullScreen = true, mouse = true)
+  hideCursor()
 
 proc layout(muk: Muk) =
   if muk.fullscreenWidget:
@@ -239,10 +240,10 @@ proc banner(muk: Muk) =
   muk.tb.write 10, 9, "PRESS ENTER TO CONTINUE ";
   muk.tb.write 10, 10,"(THIS SAVES CPU CYLCES) ";
 
-proc exitProc() {.noconv.} =
-  illwillDeinit()
-  showCursor()
-  quit(0)
+# proc exitProc() {.noconv.} =
+#   illwillDeinit()
+#   showCursor()
+#   quit(0)
 
 proc log(muk: Muk, msg: string) =
   muk.infLog.text = (msg & "\n" & muk.infLog.text)
@@ -406,10 +407,19 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     case muk.inWidget
     of InWidget.Playlist:
       muk.inWidget = InWidget.Filesystem
+      ## Disable the other widget when in fullscreen mode
+      if muk.fullscreenWidget: muk.playlist.enabled = false
     of InWidget.Filesystem:
       muk.inWidget = InWidget.Playlist
+      ## Disable the other widget when in fullscreen mode
+      if muk.fullscreenWidget: muk.filesystem.enabled = false
     of InWidget.Search:
       discard
+    if not muk.fullscreenWidget:
+      muk.playlist.enabled = true
+      muk.filesystem.enabled = true
+
+
   of MukDebugInfo:
     muk.debugInfo = not muk.debugInfo
   of MukPrevFromPlaylist:
@@ -595,22 +605,39 @@ proc renderCurrentSongInfo(muk: Muk): string =
   result &= muk.cs.metadata.title & " | "
   result &= muk.cs.metadata.path
 
-proc main(host: string = "127.0.0.1", port: int = 8889, username = "foo", password = "baa"): int =
+proc main(host: string = "", port: int = 8889, username = "foo", password = "baa"): int =
+
   var muk = newMuk()
-  muk.host = host
-  muk.port = port.Port
-  muk.username = username
-  muk.password = password
-  if not waitFor muk.mukc.connect(host, port.Port):
-    illwillDeinit()
-    echo "Could not connect to: ", host, " ", port
+  var connected = false
+  if host == "":
+    ## We try hosts in order
+    for host, portStr in muk.config["hosts"]:
+      echo "Trying: ", host, ":", portStr
+      muk.host = host
+      muk.port = portStr.parseInt().Port
+      muk.username = username
+      muk.password = password
+
+      try:
+        if not waitFor muk.mukc.connect(host, port.Port):
+          illwillDeinit()
+          echo "Could not connect to: ", host, " ", port
+          continue
+
+        if not waitFor muk.mukc.authenticate(username, password):
+          illwillDeinit()
+          echo "Authentication failed :("
+          continue
+        connected = true
+      except:
+        continue
+      break
+
+  if not connected:
+    echo "Could not connect to any host :("
     quit()
 
-  if not waitFor muk.mukc.authenticate(username, password):
-    illwillDeinit()
-    echo "Authentication failed :("
-    quit()
-
+  muk.initTui()
   asyncCheck muk.mukc.collectFanouts(muk.cs)
 
   muk.filesystemOpenDir(getCurrentDir().absolutePath())

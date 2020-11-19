@@ -521,7 +521,7 @@ proc fanoutMpvEvents(mukd: Mukd) {.async.} =
     try:
       let event = mukd.ctx.wait_event(0)
       let mpvevent = mpv.event_name(event.event_id)
-      echo mpvevent
+      # echo mpvevent
       if mpvevent == "none":
         await sleepAsync(250)
         continue
