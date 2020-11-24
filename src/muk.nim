@@ -408,11 +408,15 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     of InWidget.Playlist:
       muk.inWidget = InWidget.Filesystem
       ## Disable the other widget when in fullscreen mode
-      if muk.fullscreenWidget: muk.playlist.enabled = false
+      if muk.fullscreenWidget:
+        muk.playlist.enabled = false
+        muk.filesystem.enabled = true
     of InWidget.Filesystem:
       muk.inWidget = InWidget.Playlist
       ## Disable the other widget when in fullscreen mode
-      if muk.fullscreenWidget: muk.filesystem.enabled = false
+      if muk.fullscreenWidget:
+        muk.filesystem.enabled = false
+        muk.playlist.enabled = true
     of InWidget.Search:
       discard
     if not muk.fullscreenWidget:
@@ -536,6 +540,9 @@ proc handleKeyboard(muk: Muk, key: var Key) =
     muk.openAction()
   of MukToggleFullscreenWidget:
     muk.fullscreenWidget = not muk.fullscreenWidget
+    if not muk.fullscreenWidget:
+      muk.filesystem.enabled = true
+      muk.playlist.enabled = true
     # muk.doLayout = true
 
   of MukMoveSongUp:
