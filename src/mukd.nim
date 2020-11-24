@@ -13,16 +13,18 @@ const
   BIND_ADDR = "0.0.0.0"
 
 proc storeDefaultMukdStatus(mukd: Mukd) =
-  ## Writes the status to de filesystem.
+  ## Writes the status to the filesystem.
   echo "Store mukd status."
   storeMukdStatus(mukd.getMukdStatus(), getAppDir() / "tmp/status.json")
 
 proc applyDefaultMukdStatus(mukd: Mukd) =
-  ## Writes the status to de filesystem.
-  # tryIgnore:
-  let status = loadMukdStatus(getAppDir() / "tmp/status.json")
-  mukd.applyMukdStatus(status)
-  echo "Apply mukd status."
+  ## Loads and apply status from filesystem
+  try:
+    let status = loadMukdStatus(getAppDir() / "tmp/status.json")
+    mukd.applyMukdStatus(status)
+    echo "Apply mukd status."
+  except:
+    echo "Could not load default status."
 
 ### High level mpv control #############################################
 proc getFanout_PROGRESS(mukd: Mukd): Message_Server_FANOUT =
